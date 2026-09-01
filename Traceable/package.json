@@ -1,0 +1,25 @@
+{
+  "name": "traceable",
+  "version": "1.0.0",
+  "description": "Traceable — Real-time Collaborative Whiteboard & Drawing Canvas",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js"
+  },
+  "keywords": [
+    "traceable",
+    "canvas",
+    "whiteboard",
+    "realtime",
+    "socket.io",
+    "collaborative"
+  ],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "express": "^4.19.2",
+    "helmet": "^7.1.0",
+    "socket.io": "^4.7.5"
+  }
+}

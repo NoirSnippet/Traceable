@@ -1,0 +1,803 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Traceable — Real-Time Collaborative Canvas</title>
+  
+  <!-- Modern Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+  
+  <!-- CSS Stylesheet -->
+  <link rel="stylesheet" href="style.css">
+
+  <!-- Socket.io Client -->
+  <script src="/socket.io/socket.io.js"></script>
+</head>
+<body>
+
+  <!-- Ambient Glow Background Graphics -->
+  <div class="bg-glow bg-glow-1"></div>
+  <div class="bg-glow bg-glow-2"></div>
+
+  <!-- Room Join / Create Overlay Modal -->
+  <div id="room-modal-overlay" class="modal-overlay">
+    <div class="modal-card glass-card">
+      <div class="modal-header">
+        <div class="brand-badge">
+          <svg class="brand-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M12 19l7-7 3 3-7 7-3-3z"></path>
+            <path d="M18 13l-1.5-7.5L2 2l3.5 14.5L13 18l5-5z"></path>
+            <path d="M2 2l7.5 8.5"></path>
+            <path d="M14 11l-4 4"></path>
+          </svg>
+          <span>Traceable</span>
+        </div>
+        <h2>Collaborative Whiteboard</h2>
+        <p>Draw, brainstorm, and create together in real-time online.</p>
+      </div>
+
+      <div class="modal-body">
+        <div class="form-group">
+          <label for="user-name-input">Your Display Name</label>
+          <input type="text" id="user-name-input" placeholder="e.g. Alex" maxlength="25" autocomplete="off" autofocus>
+        </div>
+
+        <div class="action-grid">
+          <button id="btn-create-room" class="btn btn-primary">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="12" r="10"></circle>
+              <line x1="12" y1="8" x2="12" y2="16"></line>
+              <line x1="8" y1="12" x2="16" y2="12"></line>
+            </svg>
+            Create New Room
+          </button>
+        </div>
+
+        <div class="divider">
+          <span>or join with room code</span>
+        </div>
+
+        <div class="form-row">
+          <input type="text" id="room-code-input" placeholder="CODE (e.g. X7K2P)" maxlength="5" autocomplete="off" style="text-transform: uppercase;">
+          <button id="btn-join-room" class="btn btn-secondary">
+            Join Room
+          </button>
+        </div>
+
+        <div id="modal-error-msg" class="error-banner hidden"></div>
+      </div>
+
+      <div class="modal-footer">
+        <span>🔒 Secure &amp; Ephemeral — Zero data retained after room ends.</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Main App Workspace -->
+  <div id="app-workspace" class="workspace hidden">
+    <!-- Top Header Navigation -->
+    <header class="app-header glass-header">
+      <div class="header-left">
+        <div class="logo">
+          <svg class="brand-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M12 19l7-7 3 3-7 7-3-3z"></path>
+            <path d="M18 13l-1.5-7.5L2 2l3.5 14.5L13 18l5-5z"></path>
+          </svg>
+          <span class="logo-text">Traceable</span>
+        </div>
+        
+        <div class="room-tag-container">
+          <span class="room-label">ROOM</span>
+          <span id="room-code-display" class="room-code">-----</span>
+          <button id="btn-copy-link" class="btn-icon-pill" title="Copy Shareable Link">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path>
+              <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path>
+            </svg>
+            <span>Share Link</span>
+          </button>
+        </div>
+
+        <!-- Scratchpad Layout Picker Button -->
+        <div class="layout-tag-container">
+          <button id="btn-layout-picker" class="btn-layout-picker" title="Scratchpad Layout">
+            <svg class="layout-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <rect x="3" y="3" width="18" height="18" rx="2"></rect>
+              <line x1="3" y1="9" x2="21" y2="9"></line>
+              <line x1="9" y1="21" x2="9" y2="9"></line>
+            </svg>
+            <span class="layout-name-text" id="active-layout-label">Grid</span>
+            <span id="host-crown-badge" class="host-badge hidden" title="You are the Room Host">👑 Host</span>
+            <svg class="chevron-mini" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+              <polyline points="6 9 12 15 18 9"></polyline>
+            </svg>
+          </button>
+        </div>
+      </div>
+
+      <div class="header-right">
+        <!-- Online Users Avatars -->
+        <div class="online-users-wrapper">
+          <div class="online-badge">
+            <span class="pulse-dot"></span>
+            <span id="online-count">1 Online</span>
+          </div>
+          <div id="user-avatars-list" class="avatars-list"></div>
+        </div>
+
+        <!-- Chat Toggle Button -->
+        <button id="btn-toggle-chat" class="btn-chat-toggle" title="Toggle Room Chat">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+          </svg>
+          <span class="chat-btn-label">Chat</span>
+          <span id="chat-unread-badge" class="chat-unread-badge hidden">0</span>
+        </button>
+
+        <button id="btn-leave-room" class="btn-leave desktop-only" title="Leave Room">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+            <polyline points="16 17 21 12 16 7"></polyline>
+            <line x1="21" y1="12" x2="9" y2="12"></line>
+          </svg>
+          <span>Leave</span>
+        </button>
+
+        <!-- Mobile Header Menu Trigger Button (<= 768px) -->
+        <button id="btn-mobile-header-menu" class="btn-mobile-menu mobile-only" title="Room Options" aria-label="Room Options">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="1.5"></circle>
+            <circle cx="12" cy="5" r="1.5"></circle>
+            <circle cx="12" cy="19" r="1.5"></circle>
+          </svg>
+        </button>
+      </div>
+    </header>
+
+    <!-- Mobile Header Pop-out Menu -->
+    <div id="mobile-header-backdrop" class="mobile-popout-backdrop hidden"></div>
+    <div id="mobile-header-popout" class="mobile-header-popout glass-card hidden">
+      <div class="popout-header">
+        <span class="popout-title">Room Options</span>
+        <button id="btn-close-mobile-header" class="btn-close-mini" title="Close">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="18" y1="6" x2="6" y2="18"></line>
+            <line x1="6" y1="6" x2="18" y2="18"></line>
+          </svg>
+        </button>
+      </div>
+
+      <div class="popout-actions-list">
+        <!-- Share Link -->
+        <button id="btn-mobile-share-link" class="mobile-action-row">
+          <div class="action-icon-circle">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path>
+              <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path>
+            </svg>
+          </div>
+          <div class="action-row-text">
+            <span class="action-row-title">Share Room Link</span>
+            <span class="action-row-sub">Copy invitation URL</span>
+          </div>
+        </button>
+
+        <!-- Scratchpad Layout -->
+        <button id="btn-mobile-layout-picker" class="mobile-action-row">
+          <div class="action-icon-circle">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <rect x="3" y="3" width="18" height="18" rx="2"></rect>
+              <line x1="3" y1="9" x2="21" y2="9"></line>
+              <line x1="9" y1="21" x2="9" y2="9"></line>
+            </svg>
+          </div>
+          <div class="action-row-text">
+            <div class="layout-row-title-wrap">
+              <span class="action-row-title">Canvas Layout</span>
+              <span id="mobile-host-badge" class="host-badge hidden">👑 Host</span>
+            </div>
+            <span id="mobile-layout-label" class="action-row-sub">Classic Grid</span>
+          </div>
+        </button>
+      </div>
+
+      <!-- Online Collaborators in Mobile Popout -->
+      <div class="popout-section">
+        <span class="popout-section-title">Online Collaborators (<span id="mobile-online-count">1</span>)</span>
+        <div id="mobile-users-list" class="mobile-users-list"></div>
+      </div>
+
+      <div class="popout-footer">
+        <button id="btn-mobile-leave-room" class="btn-mobile-leave">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+            <polyline points="16 17 21 12 16 7"></polyline>
+            <line x1="21" y1="12" x2="9" y2="12"></line>
+          </svg>
+          <span>Leave Room</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Floating Glassmorphic Drawing Toolbar -->
+    <div class="toolbar-wrapper">
+      <!-- Glassmorphic Shape Library Popover -->
+      <div id="shapes-popover" class="shapes-popover glass-card hidden">
+        <div class="shapes-popover-header">
+          <span class="popover-title">Shape Library</span>
+          <span class="popover-subtitle">Select shape &amp; drag on canvas</span>
+        </div>
+
+        <div class="shapes-catalog">
+          <!-- 1. Basic Geometry -->
+          <div class="shape-category">
+            <div class="category-title">Basic Shapes</div>
+            <div class="shape-grid">
+              <button class="shape-item active" data-shape="rect" title="Rectangle">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="1"></rect></svg>
+                <span>Rect</span>
+              </button>
+              <button class="shape-item" data-shape="rounded-rect" title="Rounded Rectangle">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="5"></rect></svg>
+                <span>Round</span>
+              </button>
+              <button class="shape-item" data-shape="ellipse" title="Circle / Ellipse">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"></circle></svg>
+                <span>Circle</span>
+              </button>
+              <button class="shape-item" data-shape="triangle" title="Triangle">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 3 21 21 3 21"></polygon></svg>
+                <span>Triangle</span>
+              </button>
+              <button class="shape-item" data-shape="right-triangle" title="Right Triangle">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="4 3 20 21 4 21"></polygon></svg>
+                <span>Right △</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- 2. Polygons & Stars -->
+          <div class="shape-category">
+            <div class="category-title">Polygons &amp; Stars</div>
+            <div class="shape-grid">
+              <button class="shape-item" data-shape="diamond" title="Diamond / Rhombus">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 22 12 12 22 2 12"></polygon></svg>
+                <span>Diamond</span>
+              </button>
+              <button class="shape-item" data-shape="pentagon" title="Pentagon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 22 9.5 18 21.5 6 21.5 2 9.5"></polygon></svg>
+                <span>Pentagon</span>
+              </button>
+              <button class="shape-item" data-shape="hexagon" title="Hexagon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 21 7 21 17 12 22 3 17 3 7"></polygon></svg>
+                <span>Hexagon</span>
+              </button>
+              <button class="shape-item" data-shape="octagon" title="Octagon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="7.8 2 16.2 2 22 7.8 22 16.2 16.2 22 7.8 22 2 16.2 2 7.8"></polygon></svg>
+                <span>Octagon</span>
+              </button>
+              <button class="shape-item" data-shape="star-4" title="4-Point Star">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 14.5 9.5 22 12 14.5 14.5 12 22 9.5 14.5 2 12 9.5 9.5"></polygon></svg>
+                <span>Star 4</span>
+              </button>
+              <button class="shape-item" data-shape="star-5" title="5-Point Star">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>
+                <span>Star 5</span>
+              </button>
+              <button class="shape-item" data-shape="star-6" title="6-Point Star">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 15 7.5 21 8 17 12.5 18.5 18.5 12 16 5.5 18.5 7 12.5 3 8 9 7.5"></polygon></svg>
+                <span>Star 6</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- 3. Arrows & Lines -->
+          <div class="shape-category">
+            <div class="category-title">Arrows &amp; Connectors</div>
+            <div class="shape-grid">
+              <button class="shape-item" data-shape="line" title="Straight Line">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="4" y1="20" x2="20" y2="4"></line></svg>
+                <span>Line</span>
+              </button>
+              <button class="shape-item" data-shape="arrow-right" title="Right Arrow">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"></path></svg>
+                <span>Right →</span>
+              </button>
+              <button class="shape-item" data-shape="arrow-left" title="Left Arrow">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M12 19l-7-7 7-7"></path></svg>
+                <span>← Left</span>
+              </button>
+              <button class="shape-item" data-shape="arrow-up" title="Up Arrow">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 19V5M5 12l7-7 7 7"></path></svg>
+                <span>Up ↑</span>
+              </button>
+              <button class="shape-item" data-shape="arrow-down" title="Down Arrow">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M19 12l-7 7-7-7"></path></svg>
+                <span>Down ↓</span>
+              </button>
+              <button class="shape-item" data-shape="arrow-bidirectional" title="Bi-directional Arrow">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M15 8l4 4-4 4M9 16l-4-4 4-4"></path></svg>
+                <span>Double ↔</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- 4. Symbols & Badges -->
+          <div class="shape-category">
+            <div class="category-title">Symbols &amp; Diagramming</div>
+            <div class="shape-grid">
+              <button class="shape-item" data-shape="heart" title="Heart">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path></svg>
+                <span>Heart</span>
+              </button>
+              <button class="shape-item" data-shape="speech-bubble" title="Speech Bubble">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"></path></svg>
+                <span>Callout</span>
+              </button>
+              <button class="shape-item" data-shape="cloud" title="Cloud">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z"></path></svg>
+                <span>Cloud</span>
+              </button>
+              <button class="shape-item" data-shape="cross" title="Cross / Plus">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"></path></svg>
+                <span>Cross</span>
+              </button>
+              <button class="shape-item" data-shape="cylinder" title="Cylinder">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><ellipse cx="12" cy="5" rx="9" ry="3"></ellipse><path d="M21 5v14c0 1.66-4 3-9 3s-9-1.34-9-3V5"></path></svg>
+                <span>Cylinder</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="toolbar glass-toolbar">
+        <!-- Tool Selection Buttons -->
+        <div class="tool-group" role="group" aria-label="Drawing Tools">
+          <button id="tool-brush" class="tool-btn active" data-tool="brush" title="Brush (Freehand)">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M18 13l-1.5-7.5L2 2l3.5 14.5L13 18l5-5z"></path>
+              <path d="M2 2l7.5 8.5"></path>
+            </svg>
+            <span class="tool-name">Brush</span>
+          </button>
+
+          <button id="tool-eraser" class="tool-btn" data-tool="eraser" title="Eraser">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M20 20H7L3 16C2 15 2 13 3 12L13 2C14 1 16 1 17 2L21 6C22 7 22 9 21 10L12 19L20 20Z"></path>
+              <line x1="18" y1="13" x2="11" y2="6"></line>
+            </svg>
+            <span class="tool-name">Eraser</span>
+          </button>
+
+          <!-- Unified Shapes Selector Button -->
+          <button id="tool-shapes" class="tool-btn shapes-btn" data-tool="shape" title="Shapes Library">
+            <div class="shapes-btn-content">
+              <span id="active-shape-icon" class="shape-icon-display">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <rect x="3" y="3" width="18" height="18" rx="2"></rect>
+                </svg>
+              </span>
+              <svg class="chevron-down" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                <polyline points="6 9 12 15 18 9"></polyline>
+              </svg>
+            </div>
+            <span class="tool-name" id="shapes-tool-label">Shapes</span>
+          </button>
+
+          <button id="tool-text" class="tool-btn" data-tool="text" title="Text Box">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polyline points="4 7 4 4 20 4 20 7"></polyline>
+              <line x1="9" y1="20" x2="15" y2="20"></line>
+              <line x1="12" y1="4" x2="12" y2="20"></line>
+            </svg>
+            <span class="tool-name">Text</span>
+          </button>
+        </div>
+
+        <div class="toolbar-divider desktop-only"></div>
+
+        <!-- Desktop Color Palette & Stroke Controls -->
+        <div class="style-group desktop-only">
+          <!-- Curated Color Swatches -->
+          <div class="color-palette">
+            <button class="color-swatch active" data-color="#FFFFFF" style="background-color: #FFFFFF;" title="White"></button>
+            <button class="color-swatch" data-color="#38BDF8" style="background-color: #38BDF8;" title="Cyan"></button>
+            <button class="color-swatch" data-color="#4ADE80" style="background-color: #4ADE80;" title="Green"></button>
+            <button class="color-swatch" data-color="#FACC15" style="background-color: #FACC15;" title="Yellow"></button>
+            <button class="color-swatch" data-color="#FB923C" style="background-color: #FB923C;" title="Orange"></button>
+            <button class="color-swatch" data-color="#F43F5E" style="background-color: #F43F5E;" title="Pink"></button>
+            <button class="color-swatch" data-color="#C084FC" style="background-color: #C084FC;" title="Purple"></button>
+            <button class="color-swatch" data-color="#1E293B" style="background-color: #1E293B;" title="Dark Slate"></button>
+            
+            <div class="color-picker-wrapper" title="Custom Color">
+              <input type="color" id="custom-color-input" value="#38BDF8">
+              <span class="color-picker-icon">🎨</span>
+            </div>
+          </div>
+
+          <div class="width-control">
+            <span class="control-label">Size</span>
+            <input type="range" id="stroke-width-slider" min="1" max="60" value="4">
+            <span id="stroke-width-val" class="width-val">4px</span>
+          </div>
+        </div>
+
+        <!-- Mobile Style Trigger Pill (Color & Size Pop-out Trigger) -->
+        <div class="toolbar-divider mobile-only"></div>
+        <button id="btn-mobile-style-popout" class="mobile-style-btn mobile-only" title="Brush Color & Size">
+          <span id="mobile-active-color-dot" class="mobile-active-color-dot" style="background-color: #FFFFFF;"></span>
+          <span id="mobile-active-stroke-label" class="mobile-active-stroke-label">4px</span>
+          <svg class="chevron-mini" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+            <polyline points="18 15 12 9 6 15"></polyline>
+          </svg>
+        </button>
+
+        <div class="toolbar-divider desktop-only"></div>
+
+        <!-- Actions Group (Undo / Redo / Clear / More) -->
+        <div class="action-group">
+          <!-- Undo / Redo Dock (Inline Row on Desktop, Vertical Stack on Mobile) -->
+          <div id="undo-redo-dock" class="undo-redo-dock">
+            <button id="btn-undo" class="action-btn" title="Undo (Ctrl+Z)" disabled>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polyline points="1 4 1 10 7 10"></polyline>
+                <path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"></path>
+              </svg>
+              <span>Undo</span>
+            </button>
+
+            <button id="btn-redo" class="action-btn" title="Redo (Ctrl+Y)" disabled>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polyline points="23 4 23 10 17 10"></polyline>
+                <path d="M20.49 15a9 9 0 1 1-2.13-9.36L23 10"></path>
+              </svg>
+              <span>Redo</span>
+            </button>
+          </div>
+
+          <!-- Desktop Clear Canvas -->
+          <button id="btn-clear" class="action-btn btn-danger desktop-only" title="Clear Canvas">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polyline points="3 6 5 6 21 6"></polyline>
+              <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+            </svg>
+            <span>Clear</span>
+          </button>
+
+          <!-- Mobile More Options (Trigger & Direct Popout) -->
+          <div class="mobile-more-wrapper mobile-only">
+            <button id="btn-mobile-more-popout" class="btn-mobile-more" title="More Actions" aria-label="More Actions">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="12" cy="12" r="1.5"></circle>
+                <circle cx="12" cy="5" r="1.5"></circle>
+                <circle cx="12" cy="19" r="1.5"></circle>
+              </svg>
+            </button>
+
+            <!-- Mobile More Actions Popout (Clear Canvas) -->
+            <div id="mobile-more-popout" class="mobile-more-popout glass-card hidden">
+              <button id="btn-mobile-clear" class="btn-danger mobile-clear-row" title="Clear Canvas">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <polyline points="3 6 5 6 21 6"></polyline>
+                  <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                </svg>
+                <span>Clear Canvas</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Mobile Style Popout (Color Palette & Size Slider) -->
+      <div id="mobile-style-popout" class="mobile-style-popout glass-card hidden">
+        <div class="mobile-style-header">
+          <span>Brush Color &amp; Size</span>
+          <button id="btn-close-mobile-style" class="btn-close-mini" title="Close">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <line x1="18" y1="6" x2="6" y2="18"></line>
+              <line x1="6" y1="6" x2="18" y2="18"></line>
+            </svg>
+          </button>
+        </div>
+
+        <div class="mobile-palette-container">
+          <div class="mobile-color-swatches-grid">
+            <button class="color-swatch active mobile-swatch" data-color="#FFFFFF" style="background-color: #FFFFFF;" title="White"></button>
+            <button class="color-swatch mobile-swatch" data-color="#38BDF8" style="background-color: #38BDF8;" title="Cyan"></button>
+            <button class="color-swatch mobile-swatch" data-color="#4ADE80" style="background-color: #4ADE80;" title="Green"></button>
+            <button class="color-swatch mobile-swatch" data-color="#FACC15" style="background-color: #FACC15;" title="Yellow"></button>
+            <button class="color-swatch mobile-swatch" data-color="#FB923C" style="background-color: #FB923C;" title="Orange"></button>
+            <button class="color-swatch mobile-swatch" data-color="#F43F5E" style="background-color: #F43F5E;" title="Pink"></button>
+            <button class="color-swatch mobile-swatch" data-color="#C084FC" style="background-color: #C084FC;" title="Purple"></button>
+            <button class="color-swatch mobile-swatch" data-color="#1E293B" style="background-color: #1E293B;" title="Dark Slate"></button>
+            <div class="color-picker-wrapper mobile-color-picker" title="Custom Color">
+              <input type="color" id="mobile-custom-color-input" value="#38BDF8">
+              <span class="color-picker-icon">🎨</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="mobile-slider-section">
+          <div class="mobile-slider-meta">
+            <span>Stroke Size</span>
+            <span id="mobile-slider-readout" class="mobile-slider-readout">4px</span>
+          </div>
+          <input type="range" id="mobile-stroke-slider" min="1" max="60" value="4">
+        </div>
+      </div>
+    </div>
+
+    <!-- Canvas Container -->
+    <main class="canvas-container" id="canvas-container">
+      <!-- Dedicated Scratchpad Layout Sheet -->
+      <div id="canvas-sheet" class="canvas-sheet layout-grid"></div>
+
+      <canvas id="draw-canvas"></canvas>
+      
+      <!-- Overlay for rendering remote user cursors -->
+      <div id="remote-cursors-container" class="cursors-overlay"></div>
+
+      <!-- Floating Text Tool Editor Input Overlay -->
+      <div id="text-tool-overlay" class="text-overlay hidden">
+        <input type="text" id="text-tool-input" placeholder="Type text & hit Enter..." autocomplete="off">
+        <div class="text-overlay-hint">Press Enter to place, Esc to cancel</div>
+      </div>
+    </main>
+
+    <!-- Mobile Dimmed Chat Backdrop Overlay -->
+    <div id="chat-backdrop" class="chat-backdrop hidden"></div>
+
+    <!-- Glassmorphic Collaborative Text Chat Sidebar -->
+    <aside id="chat-sidebar" class="chat-sidebar glass-card closed">
+      <div class="chat-header">
+        <div class="chat-header-title">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18">
+            <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+          </svg>
+          <h3>Room Chat</h3>
+        </div>
+        <button id="btn-close-chat" class="btn-close-chat" title="Close Chat">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="18" y1="6" x2="6" y2="18"></line>
+            <line x1="6" y1="6" x2="18" y2="18"></line>
+          </svg>
+        </button>
+      </div>
+
+      <!-- Messages Stream -->
+      <div id="chat-messages" class="chat-messages">
+        <div class="chat-empty-state" id="chat-empty-state">
+          <div class="chat-empty-icon">💬</div>
+          <p>No messages yet. Chat with your collaborators!</p>
+        </div>
+      </div>
+
+      <!-- Chat Input Form -->
+      <form id="chat-form" class="chat-form">
+        <input
+          type="text"
+          id="chat-input"
+          class="chat-input"
+          placeholder="Send a message..."
+          maxlength="500"
+          autocomplete="off"
+        />
+        <button type="submit" id="btn-send-chat" class="btn-send-chat" title="Send message">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="22" y1="2" x2="11" y2="13"></line>
+            <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+          </svg>
+        </button>
+      </form>
+    </aside>
+
+    <!-- Mobile Floating Action Button (FAB) for Chat -->
+    <button id="chat-fab" class="chat-fab" title="Open Chat" aria-label="Open Chat">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+      </svg>
+      <span id="chat-fab-unread" class="chat-fab-unread hidden">0</span>
+    </button>
+  </div>
+
+  <!-- Scratchpad Layout Picker Modal -->
+  <div id="layout-modal-overlay" class="modal-overlay hidden">
+    <div class="layout-modal-card glass-card">
+      <div class="layout-modal-header">
+        <div class="layout-header-left">
+          <div class="brand-badge-mini">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+              <rect x="3" y="3" width="18" height="18" rx="2"></rect>
+              <line x1="3" y1="9" x2="21" y2="9"></line>
+              <line x1="9" y1="21" x2="9" y2="9"></line>
+            </svg>
+            <span>Scratchpad Layouts</span>
+          </div>
+          <h2>Select Canvas Template</h2>
+          <p id="layout-modal-subtitle">Choose a collaborative background template for the room</p>
+        </div>
+        <button id="btn-close-layout-modal" class="btn-close-modal" title="Close">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="18" y1="6" x2="6" y2="18"></line>
+            <line x1="6" y1="6" x2="18" y2="18"></line>
+          </svg>
+        </button>
+      </div>
+
+      <div class="layout-catalog">
+        <!-- 1. Grids & Engineering -->
+        <div class="layout-section">
+          <div class="layout-section-title">Grids &amp; Engineering</div>
+          <div class="layout-grid-cards">
+            <button class="layout-card active" data-layout="grid">
+              <div class="layout-preview preview-grid"></div>
+              <div class="layout-info">
+                <span class="layout-title">Classic Grid</span>
+                <span class="layout-desc">40px dark square grid</span>
+              </div>
+            </button>
+            <button class="layout-card" data-layout="dots">
+              <div class="layout-preview preview-dots"></div>
+              <div class="layout-info">
+                <span class="layout-title">Dot Matrix</span>
+                <span class="layout-desc">Bullet journal dots</span>
+              </div>
+            </button>
+            <button class="layout-card" data-layout="graph">
+              <div class="layout-preview preview-graph"></div>
+              <div class="layout-info">
+                <span class="layout-title">Graph Paper</span>
+                <span class="layout-desc">Millimeter coordinate grid</span>
+              </div>
+            </button>
+            <button class="layout-card" data-layout="isometric">
+              <div class="layout-preview preview-isometric"></div>
+              <div class="layout-info">
+                <span class="layout-title">Isometric 3D</span>
+                <span class="layout-desc">3D perspective sketch grid</span>
+              </div>
+            </button>
+            <button class="layout-card" data-layout="hexagonal">
+              <div class="layout-preview preview-hexagonal"></div>
+              <div class="layout-info">
+                <span class="layout-title">Honeycomb</span>
+                <span class="layout-desc">Hexagonal lattice</span>
+              </div>
+            </button>
+            <button class="layout-card" data-layout="polar">
+              <div class="layout-preview preview-polar"></div>
+              <div class="layout-info">
+                <span class="layout-title">Polar / Radar</span>
+                <span class="layout-desc">Concentric circular rings</span>
+              </div>
+            </button>
+            <button class="layout-card" data-layout="blueprint">
+              <div class="layout-preview preview-blueprint"></div>
+              <div class="layout-info">
+                <span class="layout-title">Blueprint</span>
+                <span class="layout-desc">Architectural navy drafting</span>
+              </div>
+            </button>
+          </div>
+        </div>
+
+        <!-- 2. Notebooks & Ruled Paper -->
+        <div class="layout-section">
+          <div class="layout-section-title">Notes &amp; Ruled Paper</div>
+          <div class="layout-grid-cards">
+            <button class="layout-card" data-layout="ruled">
+              <div class="layout-preview preview-ruled"></div>
+              <div class="layout-info">
+                <span class="layout-title">Ruled Notepad</span>
+                <span class="layout-desc">Standard horizontal lines</span>
+              </div>
+            </button>
+            <button class="layout-card" data-layout="college-ruled">
+              <div class="layout-preview preview-college-ruled"></div>
+              <div class="layout-info">
+                <span class="layout-title">Margin Ruled</span>
+                <span class="layout-desc">Lined with red margin</span>
+              </div>
+            </button>
+            <button class="layout-card" data-layout="cornell">
+              <div class="layout-preview preview-cornell"></div>
+              <div class="layout-info">
+                <span class="layout-title">Cornell Notes</span>
+                <span class="layout-desc">Cue column &amp; summary zone</span>
+              </div>
+            </button>
+            <button class="layout-card" data-layout="music">
+              <div class="layout-preview preview-music"></div>
+              <div class="layout-info">
+                <span class="layout-title">Music Staff</span>
+                <span class="layout-desc">5-line manuscript staves</span>
+              </div>
+            </button>
+          </div>
+        </div>
+
+        <!-- 3. Frameworks & Diagramming -->
+        <div class="layout-section">
+          <div class="layout-section-title">Frameworks &amp; Boards</div>
+          <div class="layout-grid-cards">
+            <button class="layout-card" data-layout="kanban">
+              <div class="layout-preview preview-kanban"></div>
+              <div class="layout-info">
+                <span class="layout-title">Kanban Board</span>
+                <span class="layout-desc">To Do / Progress / Done</span>
+              </div>
+            </button>
+            <button class="layout-card" data-layout="swot">
+              <div class="layout-preview preview-swot"></div>
+              <div class="layout-info">
+                <span class="layout-title">SWOT Matrix</span>
+                <span class="layout-desc">Strengths / Weaknesses</span>
+              </div>
+            </button>
+            <button class="layout-card" data-layout="quadrant">
+              <div class="layout-preview preview-quadrant"></div>
+              <div class="layout-info">
+                <span class="layout-title">4-Quadrant Grid</span>
+                <span class="layout-desc">Retrospective / Matrix</span>
+              </div>
+            </button>
+            <button class="layout-card" data-layout="storyboard">
+              <div class="layout-preview preview-storyboard"></div>
+              <div class="layout-info">
+                <span class="layout-title">Storyboard</span>
+                <span class="layout-desc">6 Comic / Video panels</span>
+              </div>
+            </button>
+            <button class="layout-card" data-layout="calendar">
+              <div class="layout-preview preview-calendar"></div>
+              <div class="layout-info">
+                <span class="layout-title">Weekly Planner</span>
+                <span class="layout-desc">7-Day schedule columns</span>
+              </div>
+            </button>
+          </div>
+        </div>
+
+        <!-- 4. Minimalist -->
+        <div class="layout-section">
+          <div class="layout-section-title">Minimalist</div>
+          <div class="layout-grid-cards">
+            <button class="layout-card" data-layout="blank">
+              <div class="layout-preview preview-blank"></div>
+              <div class="layout-info">
+                <span class="layout-title">Pure Canvas</span>
+                <span class="layout-desc">Clean slate, zero lines</span>
+              </div>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast Notifications Container -->
+  <div id="toast-container" class="toast-container"></div>
+
+  <!-- Instant flash prevention on page refresh -->
+  <script>
+    (function() {
+      try {
+        var h = window.location.hash || '';
+        var m = h.match(/room=([A-Za-z0-9]{5})/i);
+        var r = (m && m[1]) || localStorage.getItem('traceable_room');
+        if (r && r.length === 5) {
+          var overlay = document.getElementById('room-modal-overlay');
+          if (overlay) overlay.classList.add('hidden');
+        }
+      } catch(e) {}
+    })();
+  </script>
+
+  <!-- Client Script -->
+  <script src="client.js"></script>
+</body>
+</html>
