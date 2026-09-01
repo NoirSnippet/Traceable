@@ -550,16 +550,16 @@
         </div>
       </div>
 
-      <!-- Zoom / Fit HUD Indicator & Reset Button -->
-      <div id="zoom-fit-hud" class="zoom-fit-hud hidden">
-        <button id="btn-zoom-fit" class="btn-zoom-fit" title="Fit Entire Drawing Pad to Screen">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <polyline points="15 3 21 3 21 9"></polyline>
-            <polyline points="9 21 3 21 3 15"></polyline>
-            <line x1="21" y1="3" x2="14" y2="10"></line>
-            <line x1="3" y1="21" x2="10" y2="14"></line>
-          </svg>
-          <span id="zoom-level-label">Fit</span>
+      <!-- Zoom / Fit HUD Indicator & Controls -->
+      <div id="zoom-fit-hud" class="zoom-fit-hud">
+        <button id="btn-zoom-out" class="btn-zoom-step" title="Zoom Out (2-Finger Contract)">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+        </button>
+        <button id="btn-zoom-fit" class="btn-zoom-fit" title="Reset / Fit Entire Computer Drawing Pad">
+          <span id="zoom-level-label">100% Fit</span>
+        </button>
+        <button id="btn-zoom-in" class="btn-zoom-step" title="Zoom In (2-Finger Expand)">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
         </button>
       </div>
     </main>

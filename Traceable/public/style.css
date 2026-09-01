@@ -7,11 +7,11 @@
   --bg-card: rgba(15, 23, 42, 0.75);
   --bg-card-border: rgba(255, 255, 255, 0.12);
   --bg-toolbar: rgba(15, 23, 42, 0.85);
-  
+
   --primary: #38BDF8;
   --primary-hover: #0284C7;
   --primary-glow: rgba(56, 189, 248, 0.35);
-  
+
   --accent: #8B5CF6;
   --accent-glow: rgba(139, 92, 246, 0.35);
 
@@ -21,7 +21,7 @@
 
   --danger: #F43F5E;
   --danger-hover: #E11D48;
-  
+
   --radius-sm: 8px;
   --radius-md: 12px;
   --radius-lg: 20px;
@@ -32,13 +32,16 @@
   --shadow-lg: 0 20px 40px -15px rgba(0, 0, 0, 0.6), 0 0 20px rgba(56, 189, 248, 0.1);
 }
 
-*, *::before, *::after {
+*,
+*::before,
+*::after {
   box-sizing: border-box;
   margin: 0;
   padding: 0;
 }
 
-html, body {
+html,
+body {
   width: 100%;
   height: 100%;
   overflow: hidden;
@@ -255,7 +258,8 @@ input[type="text"]:focus {
   margin: 4px 0;
 }
 
-.divider::before, .divider::after {
+.divider::before,
+.divider::after {
   content: '';
   flex: 1;
   height: 1px;
@@ -508,7 +512,7 @@ input[type="text"]:focus {
   color: #0F172A;
   border: 2px solid var(--bg-dark);
   margin-left: -8px;
-  box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
   position: relative;
   cursor: default;
 }
@@ -991,7 +995,7 @@ input[type="range"] {
 /* --- 17 Scratchpad Layout Backgrounds --- */
 .canvas-sheet.layout-grid {
   background-color: #090D16;
-  background-image: 
+  background-image:
     linear-gradient(to right, rgba(255, 255, 255, 0.035) 1px, transparent 1px),
     linear-gradient(to bottom, rgba(255, 255, 255, 0.035) 1px, transparent 1px),
     radial-gradient(circle at 50% 50%, #111726 0%, #090D16 100%);
@@ -1000,7 +1004,7 @@ input[type="range"] {
 
 .canvas-sheet.layout-dots {
   background-color: #090D16;
-  background-image: 
+  background-image:
     radial-gradient(circle, rgba(255, 255, 255, 0.16) 1.2px, transparent 1.2px),
     radial-gradient(circle at 50% 50%, #111726 0%, #090D16 100%);
   background-size: 26px 26px, 100% 100%;
@@ -1008,7 +1012,7 @@ input[type="range"] {
 
 .canvas-sheet.layout-graph {
   background-color: #080C14;
-  background-image: 
+  background-image:
     linear-gradient(to right, rgba(56, 189, 248, 0.14) 1px, transparent 1px),
     linear-gradient(to bottom, rgba(56, 189, 248, 0.14) 1px, transparent 1px),
     linear-gradient(to right, rgba(255, 255, 255, 0.025) 1px, transparent 1px),
@@ -1018,7 +1022,7 @@ input[type="range"] {
 
 .canvas-sheet.layout-isometric {
   background-color: #090D16;
-  background-image: 
+  background-image:
     linear-gradient(30deg, rgba(255, 255, 255, 0.04) 1px, transparent 1px),
     linear-gradient(150deg, rgba(255, 255, 255, 0.04) 1px, transparent 1px),
     linear-gradient(to right, rgba(255, 255, 255, 0.04) 1px, transparent 1px);
@@ -1033,14 +1037,14 @@ input[type="range"] {
 
 .canvas-sheet.layout-polar {
   background-color: #090D16;
-  background-image: 
+  background-image:
     repeating-radial-gradient(circle at center, transparent 0, transparent 40px, rgba(56, 189, 248, 0.07) 41px, transparent 42px),
     conic-gradient(from 0deg at center, transparent 0deg 29deg, rgba(255, 255, 255, 0.04) 30deg, transparent 31deg 59deg, rgba(255, 255, 255, 0.04) 60deg, transparent 61deg 89deg, rgba(56, 189, 248, 0.1) 90deg, transparent 91deg 119deg, rgba(255, 255, 255, 0.04) 120deg, transparent 121deg 149deg, rgba(255, 255, 255, 0.04) 150deg, transparent 151deg 179deg, rgba(56, 189, 248, 0.1) 180deg, transparent 181deg 209deg, rgba(255, 255, 255, 0.04) 210deg, transparent 211deg 239deg, rgba(255, 255, 255, 0.04) 240deg, transparent 241deg 269deg, rgba(56, 189, 248, 0.1) 270deg, transparent 271deg 299deg, rgba(255, 255, 255, 0.04) 300deg, transparent 301deg 329deg, rgba(255, 255, 255, 0.04) 330deg, transparent 331deg 359deg, rgba(56, 189, 248, 0.1) 360deg);
 }
 
 .canvas-sheet.layout-blueprint {
   background-color: #07152B;
-  background-image: 
+  background-image:
     linear-gradient(to right, rgba(56, 189, 248, 0.2) 1px, transparent 1px),
     linear-gradient(to bottom, rgba(56, 189, 248, 0.2) 1px, transparent 1px),
     linear-gradient(to right, rgba(56, 189, 248, 0.05) 1px, transparent 1px),
@@ -1056,7 +1060,7 @@ input[type="range"] {
 
 .canvas-sheet.layout-college-ruled {
   background-color: #090D16;
-  background-image: 
+  background-image:
     linear-gradient(to right, transparent 99px, rgba(244, 63, 94, 0.4) 100px, transparent 101px),
     linear-gradient(to bottom, rgba(255, 255, 255, 0.06) 1px, transparent 1px);
   background-size: 100% 100%, 100% 32px;
@@ -1064,7 +1068,7 @@ input[type="range"] {
 
 .canvas-sheet.layout-cornell {
   background-color: #090D16;
-  background-image: 
+  background-image:
     url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100%25' height='100%25'%3E%3Cline x1='0' y1='70' x2='100%25' y2='70' stroke='rgba(56,189,248,0.35)' stroke-width='2'/%3E%3Ctext x='24' y='46' fill='rgba(56,189,248,0.7)' font-family='sans-serif' font-size='14' font-weight='700' letter-spacing='2'%3ETOPIC / TITLE%3C/text%3E%3Cline x1='260' y1='70' x2='260' y2='82%25' stroke='rgba(56,189,248,0.3)' stroke-width='2' stroke-dasharray='6,4'/%3E%3Ctext x='25' y='105' fill='rgba(255,255,255,0.3)' font-family='sans-serif' font-size='12' font-weight='700' letter-spacing='1'%3ECUES / QUESTIONS%3C/text%3E%3Ctext x='285' y='105' fill='rgba(255,255,255,0.3)' font-family='sans-serif' font-size='12' font-weight='700' letter-spacing='1'%3ENOTES &amp; DIAGRAMS%3C/text%3E%3Cline x1='0' y1='82%25' x2='100%25' y2='82%25' stroke='rgba(56,189,248,0.35)' stroke-width='2'/%3E%3Ctext x='24' y='calc(82%25 + 34px)' fill='rgba(56,189,248,0.7)' font-family='sans-serif' font-size='13' font-weight='700' letter-spacing='2'%3ESUMMARY &amp; TAKEAWAYS%3C/text%3E%3C/svg%3E"),
     linear-gradient(to bottom, rgba(255, 255, 255, 0.035) 1px, transparent 1px);
   background-size: 100% 100%, 100% 28px;
@@ -1072,9 +1076,8 @@ input[type="range"] {
 
 .canvas-sheet.layout-music {
   background-color: #090D16;
-  background-image: 
-    repeating-linear-gradient(
-      to bottom,
+  background-image:
+    repeating-linear-gradient(to bottom,
       rgba(255, 255, 255, 0.14) 0px,
       rgba(255, 255, 255, 0.14) 1px,
       transparent 1px,
@@ -1094,8 +1097,7 @@ input[type="range"] {
       rgba(255, 255, 255, 0.14) 36px,
       rgba(255, 255, 255, 0.14) 37px,
       transparent 37px,
-      transparent 80px
-    );
+      transparent 80px);
 }
 
 .canvas-sheet.layout-kanban {
@@ -1155,38 +1157,63 @@ input[type="range"] {
 .zoom-fit-hud {
   position: absolute;
   top: 14px;
-  right: 18px;
+  right: 14px;
   z-index: 60;
-  animation: fadeIn 0.2s ease;
-}
-
-.btn-zoom-fit {
   display: flex;
   align-items: center;
-  gap: 6px;
-  padding: 6px 12px;
+  gap: 3px;
   background: rgba(15, 23, 42, 0.88);
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
   border: 1px solid rgba(56, 189, 248, 0.35);
   border-radius: 20px;
+  padding: 3px 6px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.5);
+  user-select: none;
+}
+
+.btn-zoom-step {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  background: transparent;
+  border: none;
+  border-radius: 50%;
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn-zoom-step:hover {
+  background: rgba(56, 189, 248, 0.15);
   color: #38BDF8;
-  font-size: 0.78rem;
+}
+
+.btn-zoom-step svg {
+  width: 14px;
+  height: 14px;
+}
+
+.btn-zoom-fit {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 10px;
+  background: rgba(56, 189, 248, 0.1);
+  border: 1px solid rgba(56, 189, 248, 0.2);
+  border-radius: 14px;
+  color: #38BDF8;
+  font-size: 0.74rem;
   font-weight: 700;
   cursor: pointer;
-  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.4);
   transition: all 0.2s ease;
 }
 
 .btn-zoom-fit:hover {
-  background: rgba(56, 189, 248, 0.18);
+  background: rgba(56, 189, 248, 0.25);
   border-color: var(--primary);
-  transform: translateY(-1px);
-}
-
-.btn-zoom-fit svg {
-  width: 14px;
-  height: 14px;
 }
 
 .remote-cursor {
@@ -1237,7 +1264,7 @@ input[type="range"] {
   border-radius: var(--radius-sm);
   outline: none;
   font-weight: 600;
-  box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5);
 }
 
 .text-overlay-hint {
@@ -1291,35 +1318,82 @@ input[type="range"] {
 
 /* Keyframe Animations */
 @keyframes fadeIn {
-  from { opacity: 0; }
-  to { opacity: 1; }
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
 }
 
 @keyframes scaleUp {
-  from { opacity: 0; transform: scale(0.92); }
-  to { opacity: 1; transform: scale(1); }
+  from {
+    opacity: 0;
+    transform: scale(0.92);
+  }
+
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
 }
 
 @keyframes shake {
-  0%, 100% { transform: translateX(0); }
-  20%, 60% { transform: translateX(-6px); }
-  40%, 80% { transform: translateX(6px); }
+
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+
+  20%,
+  60% {
+    transform: translateX(-6px);
+  }
+
+  40%,
+  80% {
+    transform: translateX(6px);
+  }
 }
 
 @keyframes pulse {
-  0% { transform: scale(0.95); opacity: 0.8; }
-  50% { transform: scale(1.15); opacity: 1; }
-  100% { transform: scale(0.95); opacity: 0.8; }
+  0% {
+    transform: scale(0.95);
+    opacity: 0.8;
+  }
+
+  50% {
+    transform: scale(1.15);
+    opacity: 1;
+  }
+
+  100% {
+    transform: scale(0.95);
+    opacity: 0.8;
+  }
 }
 
 @keyframes slideInRight {
-  from { transform: translateX(100%); opacity: 0; }
-  to { transform: translateX(0); opacity: 1; }
+  from {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
 }
 
 @keyframes fadeOut {
-  from { opacity: 1; }
-  to { opacity: 0; }
+  from {
+    opacity: 1;
+  }
+
+  to {
+    opacity: 0;
+  }
 }
 
 /* ==========================================================================
@@ -1529,7 +1603,7 @@ input[type="range"] {
 
 .preview-music {
   background-color: #090D16;
-  background-image: repeating-linear-gradient(to bottom, rgba(255,255,255,0.25) 0, rgba(255,255,255,0.25) 1px, transparent 1px, transparent 4px, rgba(255,255,255,0.25) 4px, rgba(255,255,255,0.25) 5px, transparent 5px, transparent 8px, rgba(255,255,255,0.25) 8px, rgba(255,255,255,0.25) 9px, transparent 9px, transparent 12px, rgba(255,255,255,0.25) 12px, rgba(255,255,255,0.25) 13px, transparent 13px, transparent 16px, rgba(255,255,255,0.25) 16px, rgba(255,255,255,0.25) 17px, transparent 17px, transparent 32px);
+  background-image: repeating-linear-gradient(to bottom, rgba(255, 255, 255, 0.25) 0, rgba(255, 255, 255, 0.25) 1px, transparent 1px, transparent 4px, rgba(255, 255, 255, 0.25) 4px, rgba(255, 255, 255, 0.25) 5px, transparent 5px, transparent 8px, rgba(255, 255, 255, 0.25) 8px, rgba(255, 255, 255, 0.25) 9px, transparent 9px, transparent 12px, rgba(255, 255, 255, 0.25) 12px, rgba(255, 255, 255, 0.25) 13px, transparent 13px, transparent 16px, rgba(255, 255, 255, 0.25) 16px, rgba(255, 255, 255, 0.25) 17px, transparent 17px, transparent 32px);
 }
 
 .preview-kanban {
@@ -1930,6 +2004,7 @@ input[type="range"] {
 .desktop-only {
   display: flex;
 }
+
 .mobile-only {
   display: none !important;
 }

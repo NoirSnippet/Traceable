@@ -115,6 +115,8 @@
   const toastContainer = document.getElementById('toast-container');
   const zoomFitHud = document.getElementById('zoom-fit-hud');
   const btnZoomFit = document.getElementById('btn-zoom-fit');
+  const btnZoomIn = document.getElementById('btn-zoom-in');
+  const btnZoomOut = document.getElementById('btn-zoom-out');
   const zoomLevelLabel = document.getElementById('zoom-level-label');
 
   // Collaborative Text Chat Elements
@@ -245,15 +247,8 @@
 
     boardStage.style.transform = `translate3d(${currentOffsetX}px, ${currentOffsetY}px, 0) scale(${currentScale})`;
 
-    if (zoomFitHud) {
-      if (userZoom > 1.05 || Math.abs(panX) > 15 || Math.abs(panY) > 15) {
-        zoomFitHud.classList.remove('hidden');
-        if (zoomLevelLabel) {
-          zoomLevelLabel.textContent = `${Math.round(userZoom * 100)}% Fit`;
-        }
-      } else {
-        zoomFitHud.classList.add('hidden');
-      }
+    if (zoomLevelLabel) {
+      zoomLevelLabel.textContent = `${Math.round(userZoom * 100)}% Fit`;
     }
   }
 
@@ -264,8 +259,29 @@
     updateBoardTransform();
   }
 
+  function zoomIn() {
+    userZoom = Math.min(6.0, +(userZoom * 1.25).toFixed(2));
+    updateBoardTransform();
+  }
+
+  function zoomOut() {
+    userZoom = Math.max(0.3, +(userZoom * 0.8).toFixed(2));
+    if (Math.abs(userZoom - 1.0) < 0.05) {
+      userZoom = 1;
+      panX = 0;
+      panY = 0;
+    }
+    updateBoardTransform();
+  }
+
   if (btnZoomFit) {
     btnZoomFit.addEventListener('click', resetZoom);
+  }
+  if (btnZoomIn) {
+    btnZoomIn.addEventListener('click', zoomIn);
+  }
+  if (btnZoomOut) {
+    btnZoomOut.addEventListener('click', zoomOut);
   }
 
   function resizeCanvas() {
@@ -801,73 +817,106 @@
   canvas.addEventListener('mouseleave', handleEnd);
 
   // --- Touch Gestures: 1-Finger Draw, 2-Finger Zoom/Pan ---
-  let touchStartDistance = 0;
-  let touchStartZoom = 1;
-  let touchStartPanX = 0;
-  let touchStartPanY = 0;
-  let touchStartMidX = 0;
-  let touchStartMidY = 0;
+  // --- Touch Gestures: 1-Finger Draw, 2-Finger Zoom/Pan (Expanding & Contracting) ---
+  let lastPinchDist = 0;
+  let lastPinchMidX = 0;
+  let lastPinchMidY = 0;
   let isPinching = false;
+  let lastTapTime = 0;
 
-  canvas.addEventListener('touchstart', (e) => {
-    if (e.touches.length === 2) {
+  function onTouchStart(e) {
+    if (e.touches.length >= 2) {
       isPinching = true;
       if (isDrawing) {
         isDrawing = false;
         currentShape = null;
         renderCanvas();
       }
-      touchStartDistance = Math.hypot(
+      lastPinchDist = Math.hypot(
         e.touches[0].clientX - e.touches[1].clientX,
         e.touches[0].clientY - e.touches[1].clientY
       );
-      touchStartZoom = userZoom;
-      touchStartPanX = panX;
-      touchStartPanY = panY;
-      touchStartMidX = (e.touches[0].clientX + e.touches[1].clientX) / 2;
-      touchStartMidY = (e.touches[0].clientY + e.touches[1].clientY) / 2;
+      lastPinchMidX = (e.touches[0].clientX + e.touches[1].clientX) / 2;
+      lastPinchMidY = (e.touches[0].clientY + e.touches[1].clientY) / 2;
     } else if (e.touches.length === 1 && !isPinching) {
       handleStart(e);
     }
-  }, { passive: false });
+  }
 
-  canvas.addEventListener('touchmove', (e) => {
-    e.preventDefault();
-    if (e.touches.length === 2 && isPinching) {
-      const dist = Math.hypot(
+  function onTouchMove(e) {
+    if (e.touches.length >= 2) {
+      e.preventDefault();
+      const currentDist = Math.hypot(
         e.touches[0].clientX - e.touches[1].clientX,
         e.touches[0].clientY - e.touches[1].clientY
       );
-      if (touchStartDistance > 0) {
-        const factor = dist / touchStartDistance;
-        userZoom = Math.min(4.0, Math.max(1.0, touchStartZoom * factor));
+      const currentMidX = (e.touches[0].clientX + e.touches[1].clientX) / 2;
+      const currentMidY = (e.touches[0].clientY + e.touches[1].clientY) / 2;
+
+      if (lastPinchDist > 0 && currentDist > 0) {
+        // Continuous delta scaling for smooth expanding & contracting
+        const scaleFactor = currentDist / lastPinchDist;
+        userZoom = Math.min(6.0, Math.max(0.3, +(userZoom * scaleFactor).toFixed(3)));
+
+        // Pan with fingers
+        panX += (currentMidX - lastPinchMidX);
+        panY += (currentMidY - lastPinchMidY);
+
+        updateBoardTransform();
       }
-      const midX = (e.touches[0].clientX + e.touches[1].clientX) / 2;
-      const midY = (e.touches[0].clientY + e.touches[1].clientY) / 2;
-      panX = touchStartPanX + (midX - touchStartMidX);
-      panY = touchStartPanY + (midY - touchStartMidY);
-      updateBoardTransform();
+
+      lastPinchDist = currentDist;
+      lastPinchMidX = currentMidX;
+      lastPinchMidY = currentMidY;
     } else if (e.touches.length === 1 && !isPinching) {
+      e.preventDefault();
       handleMove(e);
     }
-  }, { passive: false });
+  }
 
-  canvas.addEventListener('touchend', (e) => {
+  function onTouchEnd(e) {
     if (e.touches.length < 2) {
       isPinching = false;
+      lastPinchDist = 0;
     }
     if (e.touches.length === 0) {
+      // Double-tap to quickly reset fit to screen
+      const now = Date.now();
+      if (now - lastTapTime < 280) {
+        resetZoom();
+      }
+      lastTapTime = now;
       handleEnd();
     }
-  });
+  }
 
-  // Trackpad / Mouse Wheel Zoom with Ctrl/Cmd
+  // Attach touch listeners to both canvas and canvasContainer for seamless edge-to-edge gestures
+  canvas.addEventListener('touchstart', onTouchStart, { passive: false });
+  canvas.addEventListener('touchmove', onTouchMove, { passive: false });
+  canvas.addEventListener('touchend', onTouchEnd);
+  canvas.addEventListener('touchcancel', onTouchEnd);
+
+  if (canvasContainer) {
+    canvasContainer.addEventListener('touchstart', (e) => {
+      if (e.touches.length >= 2) {
+        onTouchStart(e);
+      }
+    }, { passive: false });
+    canvasContainer.addEventListener('touchmove', (e) => {
+      if (e.touches.length >= 2) {
+        onTouchMove(e);
+      }
+    }, { passive: false });
+    canvasContainer.addEventListener('touchend', onTouchEnd);
+  }
+
+  // Trackpad / Mouse Wheel Zoom with Ctrl/Cmd or trackpad pinch
   canvasContainer.addEventListener('wheel', (e) => {
-    if (e.ctrlKey || e.metaKey) {
+    if (e.ctrlKey || e.metaKey || Math.abs(e.deltaY) > 0) {
       e.preventDefault();
       const zoomFactor = e.deltaY < 0 ? 1.08 : 0.92;
-      userZoom = Math.min(4.0, Math.max(1.0, userZoom * zoomFactor));
-      if (userZoom <= 1.02) {
+      userZoom = Math.min(6.0, Math.max(0.3, +(userZoom * zoomFactor).toFixed(3)));
+      if (Math.abs(userZoom - 1.0) < 0.04) {
         userZoom = 1;
         panX = 0;
         panY = 0;
