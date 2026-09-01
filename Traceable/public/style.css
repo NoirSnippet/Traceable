@@ -958,16 +958,31 @@ input[type="range"] {
   position: relative;
   width: 100%;
   height: calc(100vh - 64px);
-  background-color: #090D16;
+  background-color: #060911;
   overflow: hidden;
   cursor: crosshair;
+  touch-action: none;
+}
+
+.board-stage {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 1920px;
+  height: 1080px;
+  transform-origin: 0 0;
+  box-shadow: 0 16px 50px rgba(0, 0, 0, 0.75), 0 0 1px rgba(255, 255, 255, 0.16);
+  border-radius: 6px;
+  overflow: hidden;
+  background-color: #090D16;
+  will-change: transform;
 }
 
 .canvas-sheet {
   position: absolute;
   inset: 0;
-  width: 100%;
-  height: 100%;
+  width: 1920px;
+  height: 1080px;
   pointer-events: none;
   z-index: 0;
   transition: background 0.3s ease;
@@ -1120,20 +1135,58 @@ input[type="range"] {
   position: absolute;
   top: 0;
   left: 0;
-  width: 100%;
-  height: 100%;
+  width: 1920px;
+  height: 1080px;
   display: block;
   z-index: 2;
+  touch-action: none;
 }
 
 .cursors-overlay {
   position: absolute;
   top: 0;
   left: 0;
-  width: 100%;
-  height: 100%;
+  width: 1920px;
+  height: 1080px;
   pointer-events: none;
   z-index: 30;
+}
+
+.zoom-fit-hud {
+  position: absolute;
+  top: 14px;
+  right: 18px;
+  z-index: 60;
+  animation: fadeIn 0.2s ease;
+}
+
+.btn-zoom-fit {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  background: rgba(15, 23, 42, 0.88);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(56, 189, 248, 0.35);
+  border-radius: 20px;
+  color: #38BDF8;
+  font-size: 0.78rem;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.4);
+  transition: all 0.2s ease;
+}
+
+.btn-zoom-fit:hover {
+  background: rgba(56, 189, 248, 0.18);
+  border-color: var(--primary);
+  transform: translateY(-1px);
+}
+
+.btn-zoom-fit svg {
+  width: 14px;
+  height: 14px;
 }
 
 .remote-cursor {

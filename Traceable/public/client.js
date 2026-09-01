@@ -105,6 +105,7 @@
   const btnClear = document.getElementById('btn-clear');
 
   const canvasContainer = document.getElementById('canvas-container');
+  const boardStage = document.getElementById('board-stage');
   const canvas = document.getElementById('draw-canvas');
   const ctx = canvas.getContext('2d');
   const remoteCursorsContainer = document.getElementById('remote-cursors-container');
@@ -112,6 +113,9 @@
   const textToolOverlay = document.getElementById('text-tool-overlay');
   const textToolInput = document.getElementById('text-tool-input');
   const toastContainer = document.getElementById('toast-container');
+  const zoomFitHud = document.getElementById('zoom-fit-hud');
+  const btnZoomFit = document.getElementById('btn-zoom-fit');
+  const zoomLevelLabel = document.getElementById('zoom-level-label');
 
   // Collaborative Text Chat Elements
   let isChatOpen = false;
@@ -201,23 +205,82 @@
 
   checkUrlHash();
 
-  // --- Canvas High-DPI Resizing ---
+  // --- Universal 1920x1080 Responsive Board System ---
+  const BOARD_WIDTH = 1920;
+  const BOARD_HEIGHT = 1080;
+
   let dpr = window.devicePixelRatio || 1;
-  let canvasWidth = 0;
-  let canvasHeight = 0;
+  let currentScale = 1;
+  let currentOffsetX = 0;
+  let currentOffsetY = 0;
+  let userZoom = 1;
+  let panX = 0;
+  let panY = 0;
+
+  function updateBoardTransform() {
+    if (!canvasContainer || !boardStage) return;
+
+    const containerW = canvasContainer.clientWidth;
+    const containerH = canvasContainer.clientHeight;
+    if (containerW === 0 || containerH === 0) return;
+
+    const isMobile = window.innerWidth <= 768;
+    // On mobile, reserve space for bottom toolbar and dock so board floats cleanly
+    const bottomReserve = isMobile ? 74 : 0;
+    const availableH = Math.max(160, containerH - bottomReserve);
+
+    // Compute base scale so the entire 1920x1080 computer drawing pad fits inside the screen
+    const scaleX = containerW / BOARD_WIDTH;
+    const scaleY = availableH / BOARD_HEIGHT;
+    const baseFitScale = Math.min(scaleX, scaleY);
+
+    currentScale = baseFitScale * userZoom;
+
+    const renderedW = BOARD_WIDTH * currentScale;
+    const renderedH = BOARD_HEIGHT * currentScale;
+
+    // Center board within the available container space + pan offsets
+    currentOffsetX = ((containerW - renderedW) / 2) + panX;
+    currentOffsetY = ((availableH - renderedH) / 2) + panY;
+
+    boardStage.style.transform = `translate3d(${currentOffsetX}px, ${currentOffsetY}px, 0) scale(${currentScale})`;
+
+    if (zoomFitHud) {
+      if (userZoom > 1.05 || Math.abs(panX) > 15 || Math.abs(panY) > 15) {
+        zoomFitHud.classList.remove('hidden');
+        if (zoomLevelLabel) {
+          zoomLevelLabel.textContent = `${Math.round(userZoom * 100)}% Fit`;
+        }
+      } else {
+        zoomFitHud.classList.add('hidden');
+      }
+    }
+  }
+
+  function resetZoom() {
+    userZoom = 1;
+    panX = 0;
+    panY = 0;
+    updateBoardTransform();
+  }
+
+  if (btnZoomFit) {
+    btnZoomFit.addEventListener('click', resetZoom);
+  }
 
   function resizeCanvas() {
-    if (!canvasContainer) return;
+    if (!canvas) return;
     dpr = window.devicePixelRatio || 1;
-    canvasWidth = canvasContainer.clientWidth;
-    canvasHeight = canvasContainer.clientHeight;
 
-    canvas.width = canvasWidth * dpr;
-    canvas.height = canvasHeight * dpr;
-    canvas.style.width = canvasWidth + 'px';
-    canvas.style.height = canvasHeight + 'px';
+    // Buffer is locked to 1920x1080 * dpr for razor-sharp vector rendering
+    canvas.width = BOARD_WIDTH * dpr;
+    canvas.height = BOARD_HEIGHT * dpr;
+    canvas.style.width = BOARD_WIDTH + 'px';
+    canvas.style.height = BOARD_HEIGHT + 'px';
 
     ctx.scale(dpr, dpr);
+
+    updateBoardTransform();
     renderCanvas();
   }
 
@@ -227,8 +290,8 @@
   function renderCanvas() {
     if (!ctx) return;
 
-    // Clear canvas drawing layer (background grid is maintained on background sheet underneath)
-    ctx.clearRect(0, 0, canvasWidth, canvasHeight);
+    // Clear the full 1920x1080 drawing canvas
+    ctx.clearRect(0, 0, BOARD_WIDTH, BOARD_HEIGHT);
 
     // 1. Draw all committed shapes history
     for (let i = 0; i < shapesHistory.length; i++) {
@@ -628,9 +691,8 @@
     ctx.closePath();
   }
 
-  // --- Mouse & Touch Coordinates ---
+  // --- Mouse & Touch Coordinates in Universal Board Space ---
   function getCanvasCoords(e) {
-    const rect = canvas.getBoundingClientRect();
     let clientX, clientY;
     if (e.touches && e.touches.length > 0) {
       clientX = e.touches[0].clientX;
@@ -639,9 +701,18 @@
       clientX = e.clientX;
       clientY = e.clientY;
     }
+
+    if (!boardStage) {
+      return { x: 0, y: 0 };
+    }
+
+    const rect = boardStage.getBoundingClientRect();
+    const x = (clientX - rect.left) * (BOARD_WIDTH / rect.width);
+    const y = (clientY - rect.top) * (BOARD_HEIGHT / rect.height);
+
     return {
-      x: clientX - rect.left,
-      y: clientY - rect.top,
+      x: Math.round(Math.max(0, Math.min(BOARD_WIDTH, x))),
+      y: Math.round(Math.max(0, Math.min(BOARD_HEIGHT, y))),
     };
   }
 
@@ -729,9 +800,81 @@
   canvas.addEventListener('mouseup', handleEnd);
   canvas.addEventListener('mouseleave', handleEnd);
 
-  canvas.addEventListener('touchstart', (e) => { e.preventDefault(); handleStart(e); });
-  canvas.addEventListener('touchmove', (e) => { e.preventDefault(); handleMove(e); });
-  canvas.addEventListener('touchend', handleEnd);
+  // --- Touch Gestures: 1-Finger Draw, 2-Finger Zoom/Pan ---
+  let touchStartDistance = 0;
+  let touchStartZoom = 1;
+  let touchStartPanX = 0;
+  let touchStartPanY = 0;
+  let touchStartMidX = 0;
+  let touchStartMidY = 0;
+  let isPinching = false;
+
+  canvas.addEventListener('touchstart', (e) => {
+    if (e.touches.length === 2) {
+      isPinching = true;
+      if (isDrawing) {
+        isDrawing = false;
+        currentShape = null;
+        renderCanvas();
+      }
+      touchStartDistance = Math.hypot(
+        e.touches[0].clientX - e.touches[1].clientX,
+        e.touches[0].clientY - e.touches[1].clientY
+      );
+      touchStartZoom = userZoom;
+      touchStartPanX = panX;
+      touchStartPanY = panY;
+      touchStartMidX = (e.touches[0].clientX + e.touches[1].clientX) / 2;
+      touchStartMidY = (e.touches[0].clientY + e.touches[1].clientY) / 2;
+    } else if (e.touches.length === 1 && !isPinching) {
+      handleStart(e);
+    }
+  }, { passive: false });
+
+  canvas.addEventListener('touchmove', (e) => {
+    e.preventDefault();
+    if (e.touches.length === 2 && isPinching) {
+      const dist = Math.hypot(
+        e.touches[0].clientX - e.touches[1].clientX,
+        e.touches[0].clientY - e.touches[1].clientY
+      );
+      if (touchStartDistance > 0) {
+        const factor = dist / touchStartDistance;
+        userZoom = Math.min(4.0, Math.max(1.0, touchStartZoom * factor));
+      }
+      const midX = (e.touches[0].clientX + e.touches[1].clientX) / 2;
+      const midY = (e.touches[0].clientY + e.touches[1].clientY) / 2;
+      panX = touchStartPanX + (midX - touchStartMidX);
+      panY = touchStartPanY + (midY - touchStartMidY);
+      updateBoardTransform();
+    } else if (e.touches.length === 1 && !isPinching) {
+      handleMove(e);
+    }
+  }, { passive: false });
+
+  canvas.addEventListener('touchend', (e) => {
+    if (e.touches.length < 2) {
+      isPinching = false;
+    }
+    if (e.touches.length === 0) {
+      handleEnd();
+    }
+  });
+
+  // Trackpad / Mouse Wheel Zoom with Ctrl/Cmd
+  canvasContainer.addEventListener('wheel', (e) => {
+    if (e.ctrlKey || e.metaKey) {
+      e.preventDefault();
+      const zoomFactor = e.deltaY < 0 ? 1.08 : 0.92;
+      userZoom = Math.min(4.0, Math.max(1.0, userZoom * zoomFactor));
+      if (userZoom <= 1.02) {
+        userZoom = 1;
+        panX = 0;
+        panY = 0;
+      }
+      updateBoardTransform();
+    }
+  }, { passive: false });
 
   // --- Text Tool Handling ---
   function openTextOverlay(x, y) {

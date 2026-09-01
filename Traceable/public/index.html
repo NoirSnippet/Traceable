@@ -533,18 +533,34 @@
 
     <!-- Canvas Container -->
     <main class="canvas-container" id="canvas-container">
-      <!-- Dedicated Scratchpad Layout Sheet -->
-      <div id="canvas-sheet" class="canvas-sheet layout-grid"></div>
+      <!-- Universal Responsive Board Stage (1920x1080 World) -->
+      <div id="board-stage" class="board-stage">
+        <!-- Dedicated Scratchpad Layout Sheet -->
+        <div id="canvas-sheet" class="canvas-sheet layout-grid"></div>
 
-      <canvas id="draw-canvas"></canvas>
-      
-      <!-- Overlay for rendering remote user cursors -->
-      <div id="remote-cursors-container" class="cursors-overlay"></div>
+        <canvas id="draw-canvas"></canvas>
+        
+        <!-- Overlay for rendering remote user cursors -->
+        <div id="remote-cursors-container" class="cursors-overlay"></div>
 
-      <!-- Floating Text Tool Editor Input Overlay -->
-      <div id="text-tool-overlay" class="text-overlay hidden">
-        <input type="text" id="text-tool-input" placeholder="Type text & hit Enter..." autocomplete="off">
-        <div class="text-overlay-hint">Press Enter to place, Esc to cancel</div>
+        <!-- Floating Text Tool Editor Input Overlay -->
+        <div id="text-tool-overlay" class="text-overlay hidden">
+          <input type="text" id="text-tool-input" placeholder="Type text & hit Enter..." autocomplete="off">
+          <div class="text-overlay-hint">Press Enter to place, Esc to cancel</div>
+        </div>
+      </div>
+
+      <!-- Zoom / Fit HUD Indicator & Reset Button -->
+      <div id="zoom-fit-hud" class="zoom-fit-hud hidden">
+        <button id="btn-zoom-fit" class="btn-zoom-fit" title="Fit Entire Drawing Pad to Screen">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polyline points="15 3 21 3 21 9"></polyline>
+            <polyline points="9 21 3 21 3 15"></polyline>
+            <line x1="21" y1="3" x2="14" y2="10"></line>
+            <line x1="3" y1="21" x2="10" y2="14"></line>
+          </svg>
+          <span id="zoom-level-label">Fit</span>
+        </button>
       </div>
     </main>
 
