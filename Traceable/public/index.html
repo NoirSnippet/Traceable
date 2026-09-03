@@ -5,6 +5,22 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
   <title>Traceable — Real-Time Collaborative Canvas</title>
   
+  <!-- Progressive Web App Metadata -->
+  <link rel="manifest" href="manifest.webmanifest">
+  <meta name="theme-color" content="#0B1120">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Traceable">
+  <meta name="application-name" content="Traceable">
+  <meta name="msapplication-TileColor" content="#0B1120">
+
+  <!-- Favicon and App Icons -->
+  <link rel="icon" type="image/svg+xml" href="icons/icon.svg">
+  <link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32x32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="icons/favicon-16x16.png">
+  <link rel="apple-touch-icon" sizes="180x180" href="icons/apple-touch-icon.png">
+  
   <!-- Modern Google Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -17,6 +33,93 @@
   <script src="/socket.io/socket.io.js"></script>
 </head>
 <body>
+
+  <!-- PWA Install Banner -->
+  <aside id="pwa-install-banner" class="pwa-banner hidden" role="region" aria-label="Install Traceable App">
+    <div class="pwa-banner-content">
+      <div class="pwa-banner-left">
+        <div class="pwa-banner-icon-wrap">
+          <img src="icons/icon-192.png" alt="Traceable App Icon" class="pwa-app-icon" width="40" height="40">
+        </div>
+        <div class="pwa-banner-text">
+          <div class="pwa-banner-title">Install Traceable</div>
+          <div class="pwa-banner-desc">Get faster access to your collaborative canvas studio right from your home screen.</div>
+        </div>
+      </div>
+      <div class="pwa-banner-actions">
+        <button type="button" id="pwa-btn-install" class="pwa-btn pwa-btn-install" aria-label="Install Traceable as application">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+            <polyline points="7 10 12 15 17 10"></polyline>
+            <line x1="12" y1="15" x2="12" y2="3"></line>
+          </svg>
+          <span>Install App</span>
+        </button>
+        <button type="button" id="pwa-btn-dismiss" class="pwa-btn pwa-btn-dismiss">Not Now</button>
+        <button type="button" id="pwa-btn-close" class="pwa-btn-close" aria-label="Dismiss install banner">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+            <line x1="18" y1="6" x2="6" y2="18"></line>
+            <line x1="6" y1="6" x2="18" y2="18"></line>
+          </svg>
+        </button>
+      </div>
+    </div>
+  </aside>
+
+  <!-- iOS Safari Add to Home Screen Instructions Modal -->
+  <div id="pwa-ios-modal" class="pwa-ios-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="pwa-ios-title">
+    <div class="pwa-ios-card">
+      <div class="pwa-ios-header">
+        <div class="pwa-ios-icon-wrap">
+          <img src="icons/icon-192.png" alt="Traceable Icon" width="44" height="44">
+        </div>
+        <div class="pwa-ios-title-wrap">
+          <h3 id="pwa-ios-title">Install Traceable on iOS</h3>
+          <p>Add to your iPhone or iPad Home Screen in 3 quick steps:</p>
+        </div>
+        <button type="button" id="pwa-ios-close" class="pwa-btn-close" aria-label="Close instructions">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18">
+            <line x1="18" y1="6" x2="6" y2="18"></line>
+            <line x1="6" y1="6" x2="18" y2="18"></line>
+          </svg>
+        </button>
+      </div>
+      <div class="pwa-ios-steps">
+        <div class="pwa-step">
+          <div class="pwa-step-num">1</div>
+          <div class="pwa-step-info">
+            <span>Tap the <strong>Share</strong> button at the bottom of Safari:</span>
+            <span class="ios-inline-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18">
+                <path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"></path>
+                <polyline points="16 6 12 2 8 6"></polyline>
+                <line x1="12" y1="2" x2="12" y2="15"></line>
+              </svg>
+            </span>
+          </div>
+        </div>
+        <div class="pwa-step">
+          <div class="pwa-step-num">2</div>
+          <div class="pwa-step-info">
+            <span>Scroll down and tap <strong>Add to Home Screen</strong>:</span>
+            <span class="ios-inline-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18">
+                <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                <line x1="12" y1="8" x2="12" y2="16"></line>
+                <line x1="8" y1="12" x2="16" y2="12"></line>
+              </svg>
+            </span>
+          </div>
+        </div>
+        <div class="pwa-step">
+          <div class="pwa-step-num">3</div>
+          <div class="pwa-step-info">
+            <span>Tap <strong>Add</strong> in the top right corner to install.</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
 
   <!-- Ambient Glow Background Graphics -->
   <div class="bg-glow bg-glow-1"></div>
@@ -981,6 +1084,9 @@
       } catch(e) {}
     })();
   </script>
+
+  <!-- Progressive Web App Script -->
+  <script src="pwa.js" defer></script>
 
   <!-- Client Script -->
   <script src="client.js"></script>

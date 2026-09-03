@@ -18,6 +18,8 @@ app.use(
         fontSrc: ["'self'", "https://fonts.gstatic.com"],
         imgSrc: ["'self'", "data:", "blob:"],
         connectSrc: ["'self'", "ws:", "wss:"],
+        manifestSrc: ["'self'"],
+        workerSrc: ["'self'"],
       },
     },
     crossOriginEmbedderPolicy: false,
@@ -25,6 +27,21 @@ app.use(
 );
 
 app.disable('x-powered-by');
+app.use(express.json({ limit: '10mb' }));
+
+// Dedicated headers for Service Worker and Web App Manifest
+app.get('/sw.js', (req, res, next) => {
+  res.setHeader('Service-Worker-Allowed', '/');
+  res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+  next();
+});
+
+app.get('/manifest.webmanifest', (req, res, next) => {
+  res.setHeader('Content-Type', 'application/manifest+json');
+  res.setHeader('Cache-Control', 'no-cache, must-revalidate');
+  next();
+});
+
 app.use(express.static(path.join(__dirname, 'public')));
 
 const io = new Server(server, {

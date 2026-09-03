@@ -78,10 +78,6 @@
   const landing3dStage = document.getElementById('landing-3d-stage');
   const landingCard = document.getElementById('landing-card');
   const artFloatingLayer = document.getElementById('art-floating-layer');
-  const tabCreate = document.getElementById('tab-create');
-  const tabJoin = document.getElementById('tab-join');
-  const panelCreate = document.getElementById('panel-create');
-  const panelJoin = document.getElementById('panel-join');
   const userNameInput = document.getElementById('user-name-input');
   const roomCodeInput = document.getElementById('room-code-input');
   const btnCreateRoom = document.getElementById('btn-create-room');

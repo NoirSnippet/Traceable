@@ -1,0 +1,39 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <defs>
+    <linearGradient id="mBgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#131D33"/>
+      <stop offset="50%" stop-color="#0B1120"/>
+      <stop offset="100%" stop-color="#040711"/>
+    </linearGradient>
+    <linearGradient id="mNibGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#7DD3FC"/>
+      <stop offset="45%" stop-color="#38BDF8"/>
+      <stop offset="80%" stop-color="#0284C7"/>
+      <stop offset="100%" stop-color="#6366F1"/>
+    </linearGradient>
+    <radialGradient id="mGlowGrad" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#38BDF8" stop-opacity="0.32"/>
+      <stop offset="100%" stop-color="#38BDF8" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+
+  <!-- Full bleed background for adaptive masking -->
+  <rect width="512" height="512" fill="url(#mBgGrad)"/>
+
+  <!-- Radial ambient glow within safe zone -->
+  <circle cx="256" cy="256" r="150" fill="url(#mGlowGrad)"/>
+
+  <!-- Subtle Palette dots representing creativity -->
+  <circle cx="150" cy="160" r="11" fill="#EC4899" opacity="0.8"/>
+  <circle cx="360" cy="160" r="11" fill="#FACC15" opacity="0.8"/>
+  <circle cx="370" cy="350" r="11" fill="#10B981" opacity="0.8"/>
+  <circle cx="140" cy="350" r="11" fill="#8B5CF6" opacity="0.8"/>
+
+  <!-- Centered safe-zone Pen Nib Symbol (scaled to fit within 60% safe circle) -->
+  <g transform="translate(130, 130) scale(10.5)" stroke="url(#mNibGrad)" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M12 19l7-7 3 3-7 7-3-3z" fill="rgba(56, 189, 248, 0.16)"/>
+    <path d="M18 13l-1.5-7.5L2 2l3.5 14.5L13 18l5-5z" fill="rgba(11, 17, 32, 0.8)"/>
+    <path d="M2 2l7.5 8.5" stroke="#FFFFFF" stroke-width="2"/>
+    <path d="M14 11l-4 4" stroke="#7DD3FC" stroke-width="2"/>
+  </g>
+</svg>
