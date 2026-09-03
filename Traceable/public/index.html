@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
   <title>Traceable — Real-Time Collaborative Canvas</title>
   
   <!-- Modern Google Fonts -->
@@ -21,57 +21,137 @@
   <!-- Ambient Glow Background Graphics -->
   <div class="bg-glow bg-glow-1"></div>
   <div class="bg-glow bg-glow-2"></div>
+  <div class="bg-glow bg-glow-3"></div>
 
-  <!-- Room Join / Create Overlay Modal -->
-  <div id="room-modal-overlay" class="modal-overlay">
-    <div class="modal-card glass-card">
-      <div class="modal-header">
-        <div class="brand-badge">
-          <svg class="brand-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M12 19l7-7 3 3-7 7-3-3z"></path>
-            <path d="M18 13l-1.5-7.5L2 2l3.5 14.5L13 18l5-5z"></path>
-            <path d="M2 2l7.5 8.5"></path>
-            <path d="M14 11l-4 4"></path>
-          </svg>
-          <span>Traceable</span>
+  <!-- Room Join / Create 3D Art Studio Scene Overlay -->
+  <div id="room-modal-overlay" class="modal-overlay landing-scene">
+    <div class="scene-3d-stage" id="landing-3d-stage">
+      
+      <!-- 3D Floating Art Studio Elements (Painting & Drawing) -->
+      <div class="art-floating-layer" id="art-floating-layer">
+        
+        <!-- 1. 3D Floating Artist Palette -->
+        <div class="art-element palette-3d" title="Artist Palette">
+          <div class="palette-body">
+            <div class="palette-thumbhole"></div>
+            <div class="paint-well well-cyan"></div>
+            <div class="paint-well well-magenta"></div>
+            <div class="paint-well well-yellow"></div>
+            <div class="paint-well well-emerald"></div>
+            <div class="paint-well well-violet"></div>
+          </div>
         </div>
-        <h2>Collaborative Whiteboard</h2>
-        <p>Draw, brainstorm, and create together in real-time online.</p>
+
+        <!-- 2. 3D Floating Paintbrush with Glowing Tip -->
+        <div class="art-element brush-3d" title="Studio Brush">
+          <div class="brush-handle"></div>
+          <div class="brush-ferrule"></div>
+          <div class="brush-bristles">
+            <div class="brush-paint-tip"></div>
+          </div>
+          <div class="paint-drip"></div>
+        </div>
+
+        <!-- 3. 3D Floating Stretched Canvas on Mini-Easel -->
+        <div class="art-element canvas-3d" title="3D Canvas">
+          <div class="canvas-frame">
+            <div class="canvas-art-stroke stroke-1"></div>
+            <div class="canvas-art-stroke stroke-2"></div>
+            <div class="canvas-art-dots"></div>
+          </div>
+        </div>
+
+        <!-- 4. Floating 3D Acrylic Splatters & Paint Drops -->
+        <div class="art-element drop-3d drop-cyan"></div>
+        <div class="art-element drop-3d drop-magenta"></div>
+        <div class="art-element drop-3d drop-gold"></div>
+        <div class="art-element drop-3d drop-purple"></div>
+
+        <!-- 5. 3D Drafting Geometric Wireframe -->
+        <div class="art-element drafting-cube-3d" title="Geometric Draft">
+          <div class="cube-face face-front"></div>
+          <div class="cube-face face-top"></div>
+          <div class="cube-face face-side"></div>
+        </div>
       </div>
 
-      <div class="modal-body">
-        <div class="form-group">
-          <label for="user-name-input">Your Display Name</label>
-          <input type="text" id="user-name-input" placeholder="e.g. Alex" maxlength="25" autocomplete="off" autofocus>
+      <!-- Main Glassmorphic 3D Card -->
+      <div class="modal-card landing-card-3d glass-card" id="landing-card">
+        <!-- Interactive Glare Layer -->
+        <div class="card-glare" id="card-glare"></div>
+
+        <div class="modal-header">
+          <div class="brand-badge-3d">
+            <div class="brand-icon-wrap">
+              <svg class="brand-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M12 19l7-7 3 3-7 7-3-3z"></path>
+                <path d="M18 13l-1.5-7.5L2 2l3.5 14.5L13 18l5-5z"></path>
+                <path d="M2 2l7.5 8.5"></path>
+                <path d="M14 11l-4 4"></path>
+              </svg>
+            </div>
+            <span class="brand-title-badge">Traceable</span>
+          </div>
+
+          <h2 class="landing-title">Collaborative Studio</h2>
+          <p class="landing-subtitle">Real-time canvas for sketchers, designers &amp; thinkers</p>
         </div>
 
-        <div class="action-grid">
-          <button id="btn-create-room" class="btn btn-primary">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <div class="modal-body">
+          <!-- Display Name Input -->
+          <div class="form-group name-group">
+            <label for="user-name-input" class="input-label">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
+                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                <circle cx="12" cy="7" r="4"></circle>
+              </svg>
+              <span>Your Display Name</span>
+            </label>
+            <div class="input-glow-wrap">
+              <input type="text" id="user-name-input" placeholder="e.g. Alex" maxlength="25" autocomplete="off" autofocus>
+            </div>
+          </div>
+
+          <!-- Direct 1-Click Create Action -->
+          <button id="btn-create-room" class="btn btn-primary btn-3d-glow">
+            <span class="btn-shimmer"></span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
               <circle cx="12" cy="12" r="10"></circle>
               <line x1="12" y1="8" x2="12" y2="16"></line>
               <line x1="8" y1="12" x2="16" y2="12"></line>
             </svg>
-            Create New Room
+            <span>Launch New Canvas</span>
           </button>
+
+          <!-- Minimal Divider -->
+          <div class="divider">
+            <span>or join with 5-letter code</span>
+          </div>
+
+          <!-- Direct Join Action Row -->
+          <div class="join-input-group">
+            <div class="code-input-wrap">
+              <input type="text" id="room-code-input" placeholder="CODE (e.g. X7K2P)" maxlength="5" autocomplete="off" style="text-transform: uppercase;">
+            </div>
+            <button id="btn-join-room" class="btn btn-secondary btn-join-action">
+              <span>Join Room</span>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                <line x1="5" y1="12" x2="19" y2="12"></line>
+                <polyline points="12 5 19 12 12 19"></polyline>
+              </svg>
+            </button>
+          </div>
+
+          <!-- Error Banner -->
+          <div id="modal-error-msg" class="error-banner hidden"></div>
         </div>
 
-        <div class="divider">
-          <span>or join with room code</span>
+        <div class="modal-footer">
+          <div class="footer-meta">
+            <span class="meta-dot"></span>
+            <span>🔒 Ephemeral &amp; Private · Zero data retained</span>
+          </div>
         </div>
-
-        <div class="form-row">
-          <input type="text" id="room-code-input" placeholder="CODE (e.g. X7K2P)" maxlength="5" autocomplete="off" style="text-transform: uppercase;">
-          <button id="btn-join-room" class="btn btn-secondary">
-            Join Room
-          </button>
-        </div>
-
-        <div id="modal-error-msg" class="error-banner hidden"></div>
-      </div>
-
-      <div class="modal-footer">
-        <span>🔒 Secure &amp; Ephemeral — Zero data retained after room ends.</span>
       </div>
     </div>
   </div>
@@ -388,13 +468,23 @@
             <span class="tool-name" id="shapes-tool-label">Shapes</span>
           </button>
 
-          <button id="tool-text" class="tool-btn" data-tool="text" title="Text Box">
+          <button id="tool-text" class="tool-btn desktop-only" data-tool="text" title="Text Box">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <polyline points="4 7 4 4 20 4 20 7"></polyline>
               <line x1="9" y1="20" x2="15" y2="20"></line>
               <line x1="12" y1="4" x2="12" y2="20"></line>
             </svg>
             <span class="tool-name">Text</span>
+          </button>
+
+          <button id="tool-pan" class="tool-btn" data-tool="pan" title="Pan / Move Canvas (1-Finger Drag)">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M18 11V6a2 2 0 0 0-2-2v0a2 2 0 0 0-2 2v0"></path>
+              <path d="M14 10V4a2 2 0 0 0-2-2v0a2 2 0 0 0-2 2v6"></path>
+              <path d="M10 10.5V6a2 2 0 0 0-2-2v0a2 2 0 0 0-2 2v8"></path>
+              <path d="M18 8a2 2 0 1 1 4 0v6a8 8 0 0 1-8 8h-2c-2.8 0-4.5-.86-5.99-2.34l-3.6-3.6a2 2 0 0 1 2.83-2.82L7 15"></path>
+            </svg>
+            <span class="tool-name">Pan</span>
           </button>
         </div>
 
@@ -478,8 +568,19 @@
               </svg>
             </button>
 
-            <!-- Mobile More Actions Popout (Clear Canvas) -->
+            <!-- Mobile More Actions Popout (Text Tool & Clear Canvas) -->
             <div id="mobile-more-popout" class="mobile-more-popout glass-card hidden">
+              <button id="btn-mobile-text" class="mobile-menu-row" title="Add Text">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <polyline points="4 7 4 4 20 4 20 7"></polyline>
+                  <line x1="9" y1="20" x2="15" y2="20"></line>
+                  <line x1="12" y1="4" x2="12" y2="20"></line>
+                </svg>
+                <span>Add Text</span>
+              </button>
+
+              <div class="mobile-more-divider"></div>
+
               <button id="btn-mobile-clear" class="btn-danger mobile-clear-row" title="Clear Canvas">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                   <polyline points="3 6 5 6 21 6"></polyline>
@@ -550,17 +651,36 @@
         </div>
       </div>
 
-      <!-- Zoom / Fit HUD Indicator & Controls -->
+      <!-- Infinite Canvas Zoom & Navigation HUD -->
       <div id="zoom-fit-hud" class="zoom-fit-hud">
-        <button id="btn-zoom-out" class="btn-zoom-step" title="Zoom Out (2-Finger Contract)">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="5" y1="12" x2="19" y2="12"></line></svg>
-        </button>
-        <button id="btn-zoom-fit" class="btn-zoom-fit" title="Reset / Fit Entire Computer Drawing Pad">
-          <span id="zoom-level-label">100% Fit</span>
-        </button>
-        <button id="btn-zoom-in" class="btn-zoom-step" title="Zoom In (2-Finger Expand)">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
-        </button>
+        <!-- Quick View Jump Pills -->
+        <div class="hud-jump-group" id="hud-jump-group">
+          <button id="btn-fit-content" class="btn-jump-pill" title="Fit All Drawings on Screen">Fit Content</button>
+          <button id="btn-jump-origin" class="btn-jump-pill active" title="Reset View to Origin (0,0)">Origin</button>
+        </div>
+
+        <div class="hud-divider"></div>
+
+        <!-- Zoom Controls -->
+        <div class="hud-zoom-group">
+          <button id="btn-zoom-out" class="btn-zoom-step" title="Zoom Out (-)">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+          </button>
+          <button id="btn-zoom-fit" class="btn-zoom-fit" title="Click to Reset Zoom to 100%">
+            <span id="zoom-level-label">100%</span>
+          </button>
+          <button id="btn-zoom-in" class="btn-zoom-step" title="Zoom In (+)">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+          </button>
+        </div>
+      </div>
+
+      <!-- Visual Mini-Map Radar Thumbnail -->
+      <div id="canvas-minimap" class="canvas-minimap" title="Infinite Canvas Radar (Click to jump)">
+        <div class="minimap-preview">
+          <div id="minimap-viewport" class="minimap-viewport"></div>
+        </div>
+        <div class="minimap-label">Infinite Canvas</div>
       </div>
     </main>
 
@@ -778,15 +898,64 @@
           </div>
         </div>
 
-        <!-- 4. Minimalist -->
+        <!-- 4. Plain & Solid Canvases (No Dots, No Lines) -->
         <div class="layout-section">
-          <div class="layout-section-title">Minimalist</div>
+          <div class="layout-section-title">Plain & Solid Canvases (No Dots, No Lines)</div>
           <div class="layout-grid-cards">
+            <button class="layout-card" data-layout="plain-white">
+              <div class="layout-preview preview-plain-white"></div>
+              <div class="layout-info">
+                <span class="layout-title">Pure White</span>
+                <span class="layout-desc">Solid bright white, zero lines</span>
+              </div>
+            </button>
+            <button class="layout-card" data-layout="plain-black">
+              <div class="layout-preview preview-plain-black"></div>
+              <div class="layout-info">
+                <span class="layout-title">Pitch Black</span>
+                <span class="layout-desc">Deep solid OLED black</span>
+              </div>
+            </button>
+            <button class="layout-card" data-layout="plain-cream">
+              <div class="layout-preview preview-plain-cream"></div>
+              <div class="layout-info">
+                <span class="layout-title">Warm Paper</span>
+                <span class="layout-desc">Soft sketchbook ivory tone</span>
+              </div>
+            </button>
+            <button class="layout-card" data-layout="plain-charcoal">
+              <div class="layout-preview preview-plain-charcoal"></div>
+              <div class="layout-info">
+                <span class="layout-title">Dark Charcoal</span>
+                <span class="layout-desc">Deep matte slate gray</span>
+              </div>
+            </button>
+            <button class="layout-card" data-layout="plain-navy">
+              <div class="layout-preview preview-plain-navy"></div>
+              <div class="layout-info">
+                <span class="layout-title">Midnight Navy</span>
+                <span class="layout-desc">Deep cosmic ocean blue</span>
+              </div>
+            </button>
+            <button class="layout-card" data-layout="plain-chalkboard">
+              <div class="layout-preview preview-plain-chalkboard"></div>
+              <div class="layout-info">
+                <span class="layout-title">Chalkboard Green</span>
+                <span class="layout-desc">Matte schoolhouse green</span>
+              </div>
+            </button>
+            <button class="layout-card" data-layout="plain-sepia">
+              <div class="layout-preview preview-plain-sepia"></div>
+              <div class="layout-info">
+                <span class="layout-title">Soft Sepia</span>
+                <span class="layout-desc">Warm vintage parchment</span>
+              </div>
+            </button>
             <button class="layout-card" data-layout="blank">
               <div class="layout-preview preview-blank"></div>
               <div class="layout-info">
-                <span class="layout-title">Pure Canvas</span>
-                <span class="layout-desc">Clean slate, zero lines</span>
+                <span class="layout-title">Midnight Radial</span>
+                <span class="layout-desc">Dark radial studio gradient</span>
               </div>
             </button>
           </div>

@@ -42,12 +42,13 @@ const USER_COLORS = [
   '#14B8A6', '#6366F1', '#D946EF', '#84CC16'
 ];
 
-// 17 Scratchpad & Whiteboard Layout Templates
+// 24 Scratchpad & Whiteboard Layout Templates
 const VALID_LAYOUTS = [
   'grid', 'dots', 'graph', 'isometric', 'hexagonal', 'polar', 'blueprint',
   'ruled', 'college-ruled', 'cornell', 'music',
   'kanban', 'swot', 'quadrant', 'storyboard', 'calendar',
-  'blank'
+  'blank',
+  'plain-white', 'plain-black', 'plain-cream', 'plain-charcoal', 'plain-navy', 'plain-chalkboard', 'plain-sepia'
 ];
 
 // Ephemeral in-memory store for active rooms

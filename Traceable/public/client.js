@@ -51,7 +51,14 @@
     'quadrant': '4-Quadrant Grid',
     'storyboard': 'Storyboard',
     'calendar': 'Weekly Planner',
-    'blank': 'Pure Canvas',
+    'blank': 'Midnight Radial',
+    'plain-white': 'Pure White',
+    'plain-black': 'Pitch Black',
+    'plain-cream': 'Warm Paper',
+    'plain-charcoal': 'Dark Charcoal',
+    'plain-navy': 'Midnight Navy',
+    'plain-chalkboard': 'Chalkboard Green',
+    'plain-sepia': 'Soft Sepia',
   };
 
   let shapesHistory = []; // Array of shape objects
@@ -68,6 +75,13 @@
 
   // --- DOM Elements ---
   const modalOverlay = document.getElementById('room-modal-overlay');
+  const landing3dStage = document.getElementById('landing-3d-stage');
+  const landingCard = document.getElementById('landing-card');
+  const artFloatingLayer = document.getElementById('art-floating-layer');
+  const tabCreate = document.getElementById('tab-create');
+  const tabJoin = document.getElementById('tab-join');
+  const panelCreate = document.getElementById('panel-create');
+  const panelJoin = document.getElementById('panel-join');
   const userNameInput = document.getElementById('user-name-input');
   const roomCodeInput = document.getElementById('room-code-input');
   const btnCreateRoom = document.getElementById('btn-create-room');
@@ -118,6 +132,11 @@
   const btnZoomIn = document.getElementById('btn-zoom-in');
   const btnZoomOut = document.getElementById('btn-zoom-out');
   const zoomLevelLabel = document.getElementById('zoom-level-label');
+  const btnFitContent = document.getElementById('btn-fit-content');
+  const btnJumpOrigin = document.getElementById('btn-jump-origin');
+  const canvasMinimap = document.getElementById('canvas-minimap');
+  const minimapViewport = document.getElementById('minimap-viewport');
+  const hudJumpGroup = document.getElementById('hud-jump-group');
 
   // Collaborative Text Chat Elements
   let isChatOpen = false;
@@ -162,6 +181,7 @@
   const btnMobileMorePopout = document.getElementById('btn-mobile-more-popout');
   const mobileMorePopout = document.getElementById('mobile-more-popout');
   const btnMobileClear = document.getElementById('btn-mobile-clear');
+  const btnMobileText = document.getElementById('btn-mobile-text');
 
   // --- Unique ID Generator ---
   function generateId() {
@@ -200,82 +220,277 @@
   function checkUrlHash() {
     const hash = window.location.hash || '';
     const match = hash.match(/#room=([A-Z0-9]{5})/i);
-    if (match && match[1]) {
+    if (match && match[1] && roomCodeInput) {
       roomCodeInput.value = match[1].toUpperCase();
     }
   }
 
   checkUrlHash();
 
-  // --- Universal 1920x1080 Responsive Board System ---
-  const BOARD_WIDTH = 1920;
-  const BOARD_HEIGHT = 1080;
-
+  // --- Infinite Boundless Collaborative Canvas Engine ---
   let dpr = window.devicePixelRatio || 1;
-  let currentScale = 1;
-  let currentOffsetX = 0;
-  let currentOffsetY = 0;
-  let userZoom = 1;
-  let panX = 0;
-  let panY = 0;
+  let zoom = 1.0;  // Scale factor: 0.08 to 5.0
+  let panX = 0;    // Viewport horizontal offset in screen pixels
+  let panY = 0;    // Viewport vertical offset in screen pixels
+  let isInitialized = false;
 
-  function updateBoardTransform() {
-    if (!canvasContainer || !boardStage) return;
+  // Pan / Drag State
+  let isPanning = false;
+  let startPanClientX = 0;
+  let startPanClientY = 0;
+  let initialPanX = 0;
+  let initialPanY = 0;
+
+  // Background Grid Base Sizes for seamless infinite tiling
+  const LAYOUT_GRID_SIZES = {
+    grid: { w: 40, h: 40 },
+    dots: { w: 26, h: 26 },
+    graph: { w: 100, h: 100 },
+    isometric: { w: 40, h: 69.28 },
+    hexagonal: { w: 56, h: 97 },
+    blueprint: { w: 80, h: 80 },
+    ruled: { w: 100, h: 32 },
+    'college-ruled': { w: 100, h: 32 },
+  };
+
+  // Screen-to-World (Infinite 2D Coordinates)
+  function screenToWorld(clientX, clientY) {
+    if (!canvasContainer) return { x: clientX, y: clientY };
+    const rect = canvasContainer.getBoundingClientRect();
+    const screenX = clientX - rect.left;
+    const screenY = clientY - rect.top;
+    return {
+      x: (screenX - panX) / zoom,
+      y: (screenY - panY) / zoom,
+    };
+  }
+
+  // World-to-Screen (Projecting World Points onto Screen)
+  function worldToScreen(worldX, worldY) {
+    return {
+      x: (worldX * zoom) + panX,
+      y: (worldY * zoom) + panY,
+    };
+  }
+
+  // Seamless Infinite Background Grid Tiling
+  function updateBackgroundGrid() {
+    if (!canvasSheet) return;
+    const sizeInfo = LAYOUT_GRID_SIZES[currentLayout] || { w: 40, h: 40 };
+    const cellW = sizeInfo.w * zoom;
+    const cellH = sizeInfo.h * zoom;
+    const posX = panX % cellW;
+    const posY = panY % cellH;
+
+    canvasSheet.style.backgroundPosition = `${posX}px ${posY}px`;
+    if (currentLayout === 'grid' || currentLayout === 'dots' || currentLayout === 'blueprint') {
+      canvasSheet.style.backgroundSize = `${cellW}px ${cellH}px`;
+    }
+  }
+
+  // Zoom smoothly towards a specific screen anchor point (mouse or finger midpoint)
+  function zoomAtPoint(factor, clientX, clientY) {
+    if (!canvasContainer) return;
+    const rect = canvasContainer.getBoundingClientRect();
+    const mouseX = clientX - rect.left;
+    const mouseY = clientY - rect.top;
+
+    const worldX = (mouseX - panX) / zoom;
+    const worldY = (mouseY - panY) / zoom;
+
+    const newZoom = Math.min(5.0, Math.max(0.08, +(zoom * factor).toFixed(3)));
+    if (newZoom === zoom) return;
+
+    zoom = newZoom;
+    panX = Math.round(mouseX - (worldX * zoom));
+    panY = Math.round(mouseY - (worldY * zoom));
+
+    if (btnFitContent) btnFitContent.classList.remove('active');
+    if (btnJumpOrigin) btnJumpOrigin.classList.remove('active');
+
+    renderCanvas();
+  }
+
+  function zoomIn() {
+    if (!canvasContainer) return;
+    zoomAtPoint(1.25, canvasContainer.clientWidth / 2, canvasContainer.clientHeight / 2);
+  }
+
+  function zoomOut() {
+    if (!canvasContainer) return;
+    zoomAtPoint(0.8, canvasContainer.clientWidth / 2, canvasContainer.clientHeight / 2);
+  }
+
+  function resetZoom100() {
+    if (!canvasContainer) return;
+    zoomAtPoint(1.0 / zoom, canvasContainer.clientWidth / 2, canvasContainer.clientHeight / 2);
+  }
+
+  // Reset viewport to (0, 0) origin centered on screen
+  function resetToOrigin() {
+    if (!canvasContainer) return;
+    zoom = 1.0;
+    const containerW = canvasContainer.clientWidth;
+    const containerH = canvasContainer.clientHeight;
+    // Center the origin comfortably in the viewport
+    panX = Math.round((containerW - 1920) / 2);
+    panY = Math.round((containerH - 1080) / 2);
+
+    if (btnJumpOrigin) btnJumpOrigin.classList.add('active');
+    if (btnFitContent) btnFitContent.classList.remove('active');
+    renderCanvas();
+  }
+
+  // Frame and fit all drawings currently on the canvas
+  function fitToContent() {
+    if (!canvasContainer) return;
+    if (shapesHistory.length === 0) {
+      resetToOrigin();
+      return;
+    }
+
+    let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+    for (const s of shapesHistory) {
+      if (s.points && s.points.length > 0) {
+        for (const p of s.points) {
+          if (p.x < minX) minX = p.x;
+          if (p.x > maxX) maxX = p.x;
+          if (p.y < minY) minY = p.y;
+          if (p.y > maxY) maxY = p.y;
+        }
+      }
+      if (Number.isFinite(s.x1) && Number.isFinite(s.x2)) {
+        minX = Math.min(minX, s.x1, s.x2);
+        maxX = Math.max(maxX, s.x1, s.x2);
+        minY = Math.min(minY, s.y1, s.y2);
+        maxY = Math.max(maxY, s.y1, s.y2);
+      }
+      if (Number.isFinite(s.x) && Number.isFinite(s.y)) {
+        minX = Math.min(minX, s.x);
+        maxX = Math.max(maxX, s.x + 200);
+        minY = Math.min(minY, s.y);
+        maxY = Math.max(maxY, s.y + 40);
+      }
+    }
+
+    if (!Number.isFinite(minX) || !Number.isFinite(maxX)) {
+      resetToOrigin();
+      return;
+    }
+
+    const contentW = Math.max(100, maxX - minX);
+    const contentH = Math.max(100, maxY - minY);
+    const padding = 80;
+
+    const containerW = canvasContainer.clientWidth;
+    const containerH = canvasContainer.clientHeight;
+
+    const scaleX = (containerW - padding * 2) / contentW;
+    const scaleY = (containerH - padding * 2) / contentH;
+    zoom = Math.min(2.0, Math.max(0.08, +(Math.min(scaleX, scaleY)).toFixed(3)));
+
+    const centerX = (minX + maxX) / 2;
+    const centerY = (minY + maxY) / 2;
+
+    panX = Math.round((containerW / 2) - (centerX * zoom));
+    panY = Math.round((containerH / 2) - (centerY * zoom));
+
+    if (btnFitContent) btnFitContent.classList.add('active');
+    if (btnJumpOrigin) btnJumpOrigin.classList.remove('active');
+    renderCanvas();
+  }
+
+  // Update Mini-Map Radar on Infinite Canvas
+  function updateMinimap() {
+    if (!canvasMinimap || !minimapViewport || !canvasContainer) return;
 
     const containerW = canvasContainer.clientWidth;
     const containerH = canvasContainer.clientHeight;
     if (containerW === 0 || containerH === 0) return;
 
-    const isMobile = window.innerWidth <= 768;
-    // On mobile, reserve space for bottom toolbar and dock so board floats cleanly
-    const bottomReserve = isMobile ? 74 : 0;
-    const availableH = Math.max(160, containerH - bottomReserve);
+    const viewWorldLeft = (0 - panX) / zoom;
+    const viewWorldTop = (0 - panY) / zoom;
+    const viewWorldRight = (containerW - panX) / zoom;
+    const viewWorldBottom = (containerH - panY) / zoom;
 
-    // Compute base scale so the entire 1920x1080 computer drawing pad fits inside the screen
-    const scaleX = containerW / BOARD_WIDTH;
-    const scaleY = availableH / BOARD_HEIGHT;
-    const baseFitScale = Math.min(scaleX, scaleY);
+    let minX = Math.min(0, viewWorldLeft);
+    let maxX = Math.max(1920, viewWorldRight);
+    let minY = Math.min(0, viewWorldTop);
+    let maxY = Math.max(1080, viewWorldBottom);
 
-    currentScale = baseFitScale * userZoom;
-
-    const renderedW = BOARD_WIDTH * currentScale;
-    const renderedH = BOARD_HEIGHT * currentScale;
-
-    // Center board within the available container space + pan offsets
-    currentOffsetX = ((containerW - renderedW) / 2) + panX;
-    currentOffsetY = ((availableH - renderedH) / 2) + panY;
-
-    boardStage.style.transform = `translate3d(${currentOffsetX}px, ${currentOffsetY}px, 0) scale(${currentScale})`;
-
-    if (zoomLevelLabel) {
-      zoomLevelLabel.textContent = `${Math.round(userZoom * 100)}% Fit`;
+    for (const s of shapesHistory) {
+      if (s.points) {
+        for (const p of s.points) {
+          if (p.x < minX) minX = p.x;
+          if (p.x > maxX) maxX = p.x;
+          if (p.y < minY) minY = p.y;
+          if (p.y > maxY) maxY = p.y;
+        }
+      }
+      if (Number.isFinite(s.x1)) {
+        minX = Math.min(minX, s.x1, s.x2);
+        maxX = Math.max(maxX, s.x1, s.x2);
+        minY = Math.min(minY, s.y1, s.y2);
+        maxY = Math.max(maxY, s.y1, s.y2);
+      }
     }
+
+    const spanX = Math.max(600, maxX - minX);
+    const spanY = Math.max(400, maxY - minY);
+    const rangeX = spanX * 1.2;
+    const rangeY = spanY * 1.2;
+    const domainX = minX - (spanX * 0.1);
+    const domainY = minY - (spanY * 0.1);
+
+    const pctX = Math.max(0, Math.min(95, ((viewWorldLeft - domainX) / rangeX) * 100));
+    const pctY = Math.max(0, Math.min(95, ((viewWorldTop - domainY) / rangeY) * 100));
+    const pctW = Math.max(6, Math.min(100, ((viewWorldRight - viewWorldLeft) / rangeX) * 100));
+    const pctH = Math.max(6, Math.min(100, ((viewWorldBottom - viewWorldTop) / rangeY) * 100));
+
+    minimapViewport.style.left = `${pctX}%`;
+    minimapViewport.style.top = `${pctY}%`;
+    minimapViewport.style.width = `${pctW}%`;
+    minimapViewport.style.height = `${pctH}%`;
+
+    canvasMinimap._radarDomain = { domainX, domainY, rangeX, rangeY };
   }
 
-  function resetZoom() {
-    userZoom = 1;
-    panX = 0;
-    panY = 0;
-    updateBoardTransform();
+  function handleMinimapInteraction(e) {
+    if (!canvasMinimap || !canvasContainer || !canvasMinimap._radarDomain) return;
+    const preview = canvasMinimap.querySelector('.minimap-preview');
+    if (!preview) return;
+    const rect = preview.getBoundingClientRect();
+    const clientX = (e.touches && e.touches[0]) ? e.touches[0].clientX : e.clientX;
+    const clientY = (e.touches && e.touches[0]) ? e.touches[0].clientY : e.clientY;
+
+    const normX = Math.max(0, Math.min(1, (clientX - rect.left) / rect.width));
+    const normY = Math.max(0, Math.min(1, (clientY - rect.top) / rect.height));
+
+    const { domainX, domainY, rangeX, rangeY } = canvasMinimap._radarDomain;
+    const targetWorldX = domainX + (normX * rangeX);
+    const targetWorldY = domainY + (normY * rangeY);
+
+    const containerW = canvasContainer.clientWidth;
+    const containerH = canvasContainer.clientHeight;
+    panX = Math.round((containerW / 2) - (targetWorldX * zoom));
+    panY = Math.round((containerH / 2) - (targetWorldY * zoom));
+
+    renderCanvas();
   }
 
-  function zoomIn() {
-    userZoom = Math.min(6.0, +(userZoom * 1.25).toFixed(2));
-    updateBoardTransform();
+  if (canvasMinimap) {
+    canvasMinimap.addEventListener('click', handleMinimapInteraction);
   }
 
-  function zoomOut() {
-    userZoom = Math.max(0.3, +(userZoom * 0.8).toFixed(2));
-    if (Math.abs(userZoom - 1.0) < 0.05) {
-      userZoom = 1;
-      panX = 0;
-      panY = 0;
-    }
-    updateBoardTransform();
+  if (btnFitContent) {
+    btnFitContent.addEventListener('click', fitToContent);
+  }
+  if (btnJumpOrigin) {
+    btnJumpOrigin.addEventListener('click', resetToOrigin);
   }
 
   if (btnZoomFit) {
-    btnZoomFit.addEventListener('click', resetZoom);
+    btnZoomFit.addEventListener('click', resetZoom100);
   }
   if (btnZoomIn) {
     btnZoomIn.addEventListener('click', zoomIn);
@@ -285,44 +500,73 @@
   }
 
   function resizeCanvas() {
-    if (!canvas) return;
+    if (!canvas || !canvasContainer) return;
     dpr = window.devicePixelRatio || 1;
+    const w = canvasContainer.clientWidth;
+    const h = canvasContainer.clientHeight;
+    if (w === 0 || h === 0) return;
 
-    // Buffer is locked to 1920x1080 * dpr for razor-sharp vector rendering
-    canvas.width = BOARD_WIDTH * dpr;
-    canvas.height = BOARD_HEIGHT * dpr;
-    canvas.style.width = BOARD_WIDTH + 'px';
-    canvas.style.height = BOARD_HEIGHT + 'px';
+    canvas.width = Math.round(w * dpr);
+    canvas.height = Math.round(h * dpr);
+    canvas.style.width = w + 'px';
+    canvas.style.height = h + 'px';
 
-    ctx.scale(dpr, dpr);
-
-    updateBoardTransform();
-    renderCanvas();
+    if (!isInitialized) {
+      isInitialized = true;
+      resetToOrigin();
+    } else {
+      renderCanvas();
+    }
   }
 
   window.addEventListener('resize', resizeCanvas);
 
-  // --- Render Loop & Canvas Drawing ---
+  if (window.ResizeObserver && canvasContainer) {
+    const resizeObserver = new ResizeObserver(() => {
+      resizeCanvas();
+    });
+    resizeObserver.observe(canvasContainer);
+  }
+
+  // --- Render Loop & Infinite Canvas Drawing ---
   function renderCanvas() {
-    if (!ctx) return;
+    if (!ctx || !canvas) return;
 
-    // Clear the full 1920x1080 drawing canvas
-    ctx.clearRect(0, 0, BOARD_WIDTH, BOARD_HEIGHT);
+    ctx.save();
+    // 1. Reset matrix to identity
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
+    // 2. Clear entire screen buffer
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-    // 1. Draw all committed shapes history
+    // 3. Apply Infinite World Transform Matrix
+    ctx.setTransform(dpr * zoom, 0, 0, dpr * zoom, panX * dpr, panY * dpr);
+
+    // 4. Draw all committed shapes
     for (let i = 0; i < shapesHistory.length; i++) {
       drawShape(ctx, shapesHistory[i]);
     }
 
-    // 2. Draw remote in-progress drafts
+    // 5. Draw remote in-progress drafts
     remoteDraftsMap.forEach((draftShape) => {
       drawShape(ctx, draftShape, true);
     });
 
-    // 3. Draw local current drawing draft
+    // 6. Draw local current drawing draft
     if (isDrawing && currentShape) {
       drawShape(ctx, currentShape, false);
     }
+
+    ctx.restore();
+
+    // 7. Update HUD zoom percentage readout
+    if (zoomLevelLabel) {
+      zoomLevelLabel.textContent = `${Math.round(zoom * 100)}%`;
+    }
+
+    updateBackgroundGrid();
+    updateMinimap();
+    updateAllRemoteCursors();
+    updateTextOverlayPosition();
   }
 
   function drawShape(context, shape, isRemoteDraft = false) {
@@ -707,7 +951,7 @@
     ctx.closePath();
   }
 
-  // --- Mouse & Touch Coordinates in Universal Board Space ---
+  // --- Mouse & Touch Coordinates in Infinite World Space ---
   function getCanvasCoords(e) {
     let clientX, clientY;
     if (e.touches && e.touches.length > 0) {
@@ -718,23 +962,29 @@
       clientY = e.clientY;
     }
 
-    if (!boardStage) {
-      return { x: 0, y: 0 };
-    }
-
-    const rect = boardStage.getBoundingClientRect();
-    const x = (clientX - rect.left) * (BOARD_WIDTH / rect.width);
-    const y = (clientY - rect.top) * (BOARD_HEIGHT / rect.height);
-
+    const worldPt = screenToWorld(clientX, clientY);
     return {
-      x: Math.round(Math.max(0, Math.min(BOARD_WIDTH, x))),
-      y: Math.round(Math.max(0, Math.min(BOARD_HEIGHT, y))),
+      x: Math.round(worldPt.x),
+      y: Math.round(worldPt.y),
     };
   }
 
-  // --- Event Listeners for Drawing ---
+  // --- Event Listeners for Drawing & Panning ---
   function handleStart(e) {
     if (!currentRoomCode) return;
+    const clientX = (e.touches && e.touches.length > 0) ? e.touches[0].clientX : e.clientX;
+    const clientY = (e.touches && e.touches.length > 0) ? e.touches[0].clientY : e.clientY;
+
+    if (currentTool === 'pan') {
+      isPanning = true;
+      startPanClientX = clientX;
+      startPanClientY = clientY;
+      initialPanX = panX;
+      initialPanY = panY;
+      if (canvasContainer) canvasContainer.classList.add('panning');
+      return;
+    }
+
     const coords = getCanvasCoords(e);
 
     if (currentTool === 'text') {
@@ -774,6 +1024,16 @@
   let lastCursorEmit = 0;
   function handleMove(e) {
     if (!currentRoomCode) return;
+    const clientX = (e.touches && e.touches.length > 0) ? e.touches[0].clientX : e.clientX;
+    const clientY = (e.touches && e.touches.length > 0) ? e.touches[0].clientY : e.clientY;
+
+    if (currentTool === 'pan' && isPanning) {
+      panX = initialPanX + (clientX - startPanClientX);
+      panY = initialPanY + (clientY - startPanClientY);
+      renderCanvas();
+      return;
+    }
+
     const coords = getCanvasCoords(e);
 
     // Throttle cursor broadcast (30 fps)
@@ -797,6 +1057,12 @@
   }
 
   function handleEnd() {
+    if (currentTool === 'pan' && isPanning) {
+      isPanning = false;
+      if (canvasContainer) canvasContainer.classList.remove('panning');
+      return;
+    }
+
     if (!isDrawing || !currentShape) return;
 
     isDrawing = false;
@@ -816,8 +1082,7 @@
   canvas.addEventListener('mouseup', handleEnd);
   canvas.addEventListener('mouseleave', handleEnd);
 
-  // --- Touch Gestures: 1-Finger Draw, 2-Finger Zoom/Pan ---
-  // --- Touch Gestures: 1-Finger Draw, 2-Finger Zoom/Pan (Expanding & Contracting) ---
+  // --- Touch Gestures: 1-Finger Draw/Pan, 2-Finger Zoom/Pan ---
   let lastPinchDist = 0;
   let lastPinchMidX = 0;
   let lastPinchMidY = 0;
@@ -854,15 +1119,14 @@
       const currentMidY = (e.touches[0].clientY + e.touches[1].clientY) / 2;
 
       if (lastPinchDist > 0 && currentDist > 0) {
-        // Continuous delta scaling for smooth expanding & contracting
         const scaleFactor = currentDist / lastPinchDist;
-        userZoom = Math.min(6.0, Math.max(0.3, +(userZoom * scaleFactor).toFixed(3)));
+        zoomAtPoint(scaleFactor, currentMidX, currentMidY);
 
         // Pan with fingers
         panX += (currentMidX - lastPinchMidX);
         panY += (currentMidY - lastPinchMidY);
 
-        updateBoardTransform();
+        renderCanvas();
       }
 
       lastPinchDist = currentDist;
@@ -880,59 +1144,66 @@
       lastPinchDist = 0;
     }
     if (e.touches.length === 0) {
-      // Double-tap to quickly reset fit to screen
-      const now = Date.now();
-      if (now - lastTapTime < 280) {
-        resetZoom();
-      }
-      lastTapTime = now;
       handleEnd();
     }
   }
 
-  // Attach touch listeners to both canvas and canvasContainer for seamless edge-to-edge gestures
-  canvas.addEventListener('touchstart', onTouchStart, { passive: false });
-  canvas.addEventListener('touchmove', onTouchMove, { passive: false });
-  canvas.addEventListener('touchend', onTouchEnd);
-  canvas.addEventListener('touchcancel', onTouchEnd);
-
+  // Attach touch listeners once to canvasContainer for seamless edge-to-edge gestures
   if (canvasContainer) {
-    canvasContainer.addEventListener('touchstart', (e) => {
-      if (e.touches.length >= 2) {
-        onTouchStart(e);
+    canvasContainer.addEventListener('touchstart', onTouchStart, { passive: false });
+    canvasContainer.addEventListener('touchmove', onTouchMove, { passive: false });
+    canvasContainer.addEventListener('touchend', onTouchEnd, { passive: false });
+    canvasContainer.addEventListener('touchcancel', onTouchEnd, { passive: false });
+
+    // Allow mouse panning to initiate even when clicking on empty board padding
+    canvasContainer.addEventListener('mousedown', (e) => {
+      if (currentTool === 'pan' && e.target === canvasContainer) {
+        handleStart(e);
       }
-    }, { passive: false });
-    canvasContainer.addEventListener('touchmove', (e) => {
-      if (e.touches.length >= 2) {
-        onTouchMove(e);
-      }
-    }, { passive: false });
-    canvasContainer.addEventListener('touchend', onTouchEnd);
+    });
+  } else {
+    canvas.addEventListener('touchstart', onTouchStart, { passive: false });
+    canvas.addEventListener('touchmove', onTouchMove, { passive: false });
+    canvas.addEventListener('touchend', onTouchEnd, { passive: false });
+    canvas.addEventListener('touchcancel', onTouchEnd, { passive: false });
   }
+
+  // Window-level mouse move and up for smooth uninterrupted panning
+  window.addEventListener('mousemove', (e) => {
+    if (currentTool === 'pan' && isPanning) {
+      handleMove(e);
+    }
+  });
+
+  window.addEventListener('mouseup', () => {
+    if (currentTool === 'pan' && isPanning) {
+      handleEnd();
+    }
+  });
 
   // Trackpad / Mouse Wheel Zoom with Ctrl/Cmd or trackpad pinch
   canvasContainer.addEventListener('wheel', (e) => {
-    if (e.ctrlKey || e.metaKey || Math.abs(e.deltaY) > 0) {
-      e.preventDefault();
-      const zoomFactor = e.deltaY < 0 ? 1.08 : 0.92;
-      userZoom = Math.min(6.0, Math.max(0.3, +(userZoom * zoomFactor).toFixed(3)));
-      if (Math.abs(userZoom - 1.0) < 0.04) {
-        userZoom = 1;
-        panX = 0;
-        panY = 0;
-      }
-      updateBoardTransform();
-    }
+    e.preventDefault();
+    const zoomFactor = e.deltaY < 0 ? 1.08 : 0.92;
+    zoomAtPoint(zoomFactor, e.clientX, e.clientY);
   }, { passive: false });
 
   // --- Text Tool Handling ---
   function openTextOverlay(x, y) {
     activeTextPosition = { x, y };
-    textToolOverlay.style.left = x + 'px';
-    textToolOverlay.style.top = y + 'px';
+    const screen = worldToScreen(x, y);
+    textToolOverlay.style.left = screen.x + 'px';
+    textToolOverlay.style.top = screen.y + 'px';
     textToolInput.value = '';
     textToolOverlay.classList.remove('hidden');
     textToolInput.focus();
+  }
+
+  function updateTextOverlayPosition() {
+    if (!textToolOverlay || textToolOverlay.classList.contains('hidden') || !activeTextPosition) return;
+    const screen = worldToScreen(activeTextPosition.x, activeTextPosition.y);
+    textToolOverlay.style.left = screen.x + 'px';
+    textToolOverlay.style.top = screen.y + 'px';
   }
 
   function commitText() {
@@ -1054,6 +1325,14 @@
       toolBtns.forEach(b => b.classList.remove('active'));
       btn.classList.add('active');
       currentTool = btn.dataset.tool;
+      if (btnMobileText) btnMobileText.classList.remove('active');
+      if (canvasContainer) {
+        if (currentTool === 'pan') {
+          canvasContainer.classList.add('tool-pan-active');
+        } else {
+          canvasContainer.classList.remove('tool-pan-active');
+        }
+      }
       hideTextOverlay();
     });
   });
@@ -1100,6 +1379,8 @@
       toolBtns.forEach(b => b.classList.remove('active'));
       if (toolShapesBtn) toolShapesBtn.classList.add('active');
       currentTool = 'shape';
+      if (canvasContainer) canvasContainer.classList.remove('tool-pan-active');
+      if (btnMobileText) btnMobileText.classList.remove('active');
 
       closeShapesPopover();
       hideTextOverlay();
@@ -1157,32 +1438,132 @@
   }
 
   // --- Room Join & Create Logic ---
-  btnCreateRoom.addEventListener('click', () => {
-    const userName = userNameInput.value.trim() || 'Artist';
-    localStorage.setItem(USER_NAME_KEY, userName);
-    socket.emit('create-room', { userName, clientId: persistentClientId });
-  });
+  if (btnCreateRoom) {
+    btnCreateRoom.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const userName = (userNameInput ? userNameInput.value.trim() : '') || 'Artist';
+      localStorage.setItem(USER_NAME_KEY, userName);
+      socket.emit('create-room', { userName, clientId: persistentClientId });
+    });
+  }
 
-  btnJoinRoom.addEventListener('click', () => {
-    const code = roomCodeInput.value.trim().toUpperCase();
-    const userName = userNameInput.value.trim() || 'Artist';
+  if (btnJoinRoom) {
+    btnJoinRoom.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const code = (roomCodeInput ? roomCodeInput.value.trim().toUpperCase() : '');
+      const userName = (userNameInput ? userNameInput.value.trim() : '') || 'Artist';
 
-    if (!code || code.length !== 5) {
-      showModalError('Please enter a valid 5-character room code.');
-      return;
-    }
-    localStorage.setItem(USER_NAME_KEY, userName);
-    localStorage.setItem(ROOM_CODE_KEY, code);
-    socket.emit('join-room', { roomCode: code, userName, clientId: persistentClientId });
-  });
+      if (!code || code.length !== 5) {
+        showModalError('Please enter a valid 5-character room code.');
+        if (roomCodeInput) roomCodeInput.focus();
+        return;
+      }
+      hideModalError();
+      localStorage.setItem(USER_NAME_KEY, userName);
+      localStorage.setItem(ROOM_CODE_KEY, code);
+      socket.emit('join-room', { roomCode: code, userName, clientId: persistentClientId });
+    });
+  }
+
+  // Keyboard Enter Key Submissions & Input Filters
+  if (userNameInput) {
+    userNameInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        const codeVal = roomCodeInput ? roomCodeInput.value.trim() : '';
+        if (codeVal.length === 5) {
+          if (btnJoinRoom) btnJoinRoom.click();
+        } else {
+          if (btnCreateRoom) btnCreateRoom.click();
+        }
+      }
+    });
+  }
+
+  if (roomCodeInput) {
+    roomCodeInput.addEventListener('input', () => {
+      roomCodeInput.value = roomCodeInput.value.toUpperCase();
+    });
+
+    roomCodeInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        if (btnJoinRoom) btnJoinRoom.click();
+      }
+    });
+  }
 
   function showModalError(msg) {
-    modalErrorMsg.textContent = msg;
-    modalErrorMsg.classList.remove('hidden');
+    if (modalErrorMsg) {
+      modalErrorMsg.textContent = msg;
+      modalErrorMsg.classList.remove('hidden');
+    }
   }
 
   function hideModalError() {
-    modalErrorMsg.classList.add('hidden');
+    if (modalErrorMsg) {
+      modalErrorMsg.classList.add('hidden');
+    }
+  }
+
+  // --- 3D Parallax Depth & Dynamic Specular Lighting ---
+  let parallaxRafId = null;
+  let targetParallaxX = 0;
+  let targetParallaxY = 0;
+  let currentParallaxX = 0;
+  let currentParallaxY = 0;
+
+  function updateParallaxScene() {
+    currentParallaxX += (targetParallaxX - currentParallaxX) * 0.15;
+    currentParallaxY += (targetParallaxY - currentParallaxY) * 0.15;
+
+    if (artFloatingLayer) {
+      artFloatingLayer.style.transform = `translate3d(${currentParallaxX.toFixed(1)}px, ${currentParallaxY.toFixed(1)}px, 0)`;
+    }
+
+    if (Math.abs(targetParallaxX - currentParallaxX) > 0.05 || Math.abs(targetParallaxY - currentParallaxY) > 0.05) {
+      parallaxRafId = requestAnimationFrame(updateParallaxScene);
+    } else {
+      parallaxRafId = null;
+    }
+  }
+
+  if (modalOverlay && window.matchMedia('(hover: hover) and (pointer: fine)').matches) {
+    modalOverlay.addEventListener('mousemove', (e) => {
+      if (!landingCard || modalOverlay.classList.contains('hidden')) return;
+      const rect = landingCard.getBoundingClientRect();
+      const centerX = rect.left + rect.width / 2;
+      const centerY = rect.top + rect.height / 2;
+
+      // Calculate normalized offset from center of card
+      const normX = Math.max(-1.5, Math.min(1.5, (e.clientX - centerX) / (rect.width / 2)));
+      const normY = Math.max(-1.5, Math.min(1.5, (e.clientY - centerY) / (rect.height / 2)));
+
+      targetParallaxX = normX * 14;
+      targetParallaxY = normY * 14;
+
+      // Specular highlight glare position
+      const glareX = Math.round(((e.clientX - rect.left) / rect.width) * 100);
+      const glareY = Math.round(((e.clientY - rect.top) / rect.height) * 100);
+      landingCard.style.setProperty('--glare-x', `${glareX}%`);
+      landingCard.style.setProperty('--glare-y', `${glareY}%`);
+      landingCard.style.setProperty('--glare-opacity', '1');
+
+      if (!parallaxRafId) {
+        parallaxRafId = requestAnimationFrame(updateParallaxScene);
+      }
+    });
+
+    modalOverlay.addEventListener('mouseleave', () => {
+      targetParallaxX = 0;
+      targetParallaxY = 0;
+      if (landingCard) {
+        landingCard.style.setProperty('--glare-opacity', '0');
+      }
+      if (!parallaxRafId) {
+        parallaxRafId = requestAnimationFrame(updateParallaxScene);
+      }
+    });
   }
 
   // --- Copy Shareable Link ---
@@ -1215,6 +1596,18 @@
 
     // Apply layout class to canvas sheet
     canvasSheet.className = `canvas-sheet layout-${layoutKey}`;
+
+    // Auto-adjust default drawing color if switching to/from light canvas backgrounds
+    const LIGHT_LAYOUTS = ['plain-white', 'plain-cream', 'plain-sepia'];
+    if (LIGHT_LAYOUTS.includes(layoutKey)) {
+      if (currentColor.toUpperCase() === '#FFFFFF' || currentColor.toUpperCase() === '#FFF') {
+        setColor('#0F172A');
+      }
+    } else {
+      if (currentColor === '#0F172A' || currentColor === '#000000') {
+        setColor('#FFFFFF');
+      }
+    }
 
     // Update label text in desktop and mobile headers
     const layoutTitle = LAYOUT_NAMES[layoutKey] || layoutKey;
@@ -1376,6 +1769,17 @@
         mobileMorePopout.classList.remove('hidden');
         btnMobileMorePopout.classList.add('active');
       }
+    });
+  }
+
+  if (btnMobileText) {
+    btnMobileText.addEventListener('click', () => {
+      closeAllMobilePopouts();
+      currentTool = 'text';
+      toolBtns.forEach(b => b.classList.remove('active'));
+      if (canvasContainer) canvasContainer.classList.remove('tool-pan-active');
+      btnMobileText.classList.add('active');
+      showToast('Text Tool: Tap on canvas to place text');
     });
   }
 
@@ -1644,6 +2048,11 @@
 
     setTimeout(() => {
       resizeCanvas();
+      if (shapesHistory && shapesHistory.length > 0) {
+        fitToContent();
+      } else {
+        resetToOrigin();
+      }
     }, 50);
 
     showToast(`Welcome to room ${currentRoomCode}!`);
@@ -1739,8 +2148,17 @@
     if (appWorkspace) appWorkspace.classList.add('hidden');
   });
 
-  // --- Remote Cursor Rendering ---
+  // --- Remote Cursor Rendering in Infinite World Space ---
+  const remoteCursorsDataMap = new Map();
+
   function updateRemoteCursor(data) {
+    remoteCursorsDataMap.set(data.userId, {
+      x: data.x,
+      y: data.y,
+      name: data.name,
+      color: data.color,
+    });
+
     let cursorEl = remoteCursorsMap.get(data.userId);
 
     if (!cursorEl) {
@@ -1760,10 +2178,22 @@
     const label = cursorEl.querySelector('.cursor-label');
     if (label) label.textContent = data.name;
 
-    cursorEl.style.transform = `translate3d(${data.x}px, ${data.y}px, 0)`;
+    const screen = worldToScreen(data.x, data.y);
+    cursorEl.style.transform = `translate3d(${screen.x}px, ${screen.y}px, 0)`;
+  }
+
+  function updateAllRemoteCursors() {
+    remoteCursorsDataMap.forEach((data, userId) => {
+      const cursorEl = remoteCursorsMap.get(userId);
+      if (cursorEl) {
+        const screen = worldToScreen(data.x, data.y);
+        cursorEl.style.transform = `translate3d(${screen.x}px, ${screen.y}px, 0)`;
+      }
+    });
   }
 
   function removeRemoteCursor(userId) {
+    remoteCursorsDataMap.delete(userId);
     const cursorEl = remoteCursorsMap.get(userId);
     if (cursorEl) {
       cursorEl.remove();
