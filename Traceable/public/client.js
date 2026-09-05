@@ -1576,6 +1576,10 @@
   // --- Leave Room (Explicit exit, clears saved session) ---
   function leaveRoom() {
     localStorage.removeItem(ROOM_CODE_KEY);
+    localStorage.removeItem(USER_NAME_KEY);
+    currentRoomCode = null;
+    if (userNameInput) userNameInput.value = '';
+    if (roomCodeInput) roomCodeInput.value = '';
     window.location.hash = '';
     window.location.reload();
   }
@@ -2138,6 +2142,8 @@
 
   socket.on('error-msg', (data) => {
     localStorage.removeItem(ROOM_CODE_KEY);
+    localStorage.removeItem(USER_NAME_KEY);
+    if (userNameInput) userNameInput.value = '';
     window.location.hash = '';
     showModalError(data.message);
     if (modalOverlay) modalOverlay.classList.remove('hidden');
@@ -2236,29 +2242,75 @@
     }
 
     const storedRoom = localStorage.getItem(ROOM_CODE_KEY);
-    const targetRoom = roomFromHash || storedRoom;
-    const storedName = localStorage.getItem(USER_NAME_KEY) || 'Artist';
+    const storedName = localStorage.getItem(USER_NAME_KEY);
 
-    if (targetRoom && targetRoom.length === 5) {
+    // Only auto-rejoin if actively refreshing an existing room session
+    if (storedRoom && storedRoom.length === 5 && roomFromHash && roomFromHash === storedRoom) {
+      const activeName = storedName || 'Artist';
       // Hide modal immediately so refreshing never flashes join/create page
       if (modalOverlay) modalOverlay.classList.add('hidden');
-      if (userNameInput) userNameInput.value = storedName;
-      if (roomCodeInput) roomCodeInput.value = targetRoom;
+      if (userNameInput) userNameInput.value = '';
+      if (roomCodeInput) roomCodeInput.value = storedRoom;
 
       socket.emit('join-room', {
-        roomCode: targetRoom,
-        userName: storedName,
+        roomCode: storedRoom,
+        userName: activeName,
         clientId: persistentClientId,
       });
     } else {
-      if (userNameInput && storedName) {
-        userNameInput.value = storedName;
+      // User backed out, left room, or arrived on landing page
+      // Completely wipe any stale saved room & username so previous name is never fetched
+      localStorage.removeItem(ROOM_CODE_KEY);
+      localStorage.removeItem(USER_NAME_KEY);
+      if (userNameInput) {
+        userNameInput.value = '';
+      }
+      if (roomCodeInput) {
+        // If arrived via invite link with room code, pre-fill code so user only has to enter name
+        roomCodeInput.value = roomFromHash || '';
       }
       if (modalOverlay) {
         modalOverlay.classList.remove('hidden');
       }
+      if (appWorkspace) {
+        appWorkspace.classList.add('hidden');
+      }
     }
   }
+
+  // --- Browser Navigation & Backing Out Listeners ---
+  window.addEventListener('hashchange', () => {
+    const hash = window.location.hash || '';
+    const match = hash.match(/room=([A-Za-z0-9]{5})/i);
+    if (!match && currentRoomCode) {
+      // User backed out of room using browser back button
+      leaveRoom();
+    } else if (match && match[1].toUpperCase() !== currentRoomCode) {
+      window.location.reload();
+    }
+  });
+
+  window.addEventListener('popstate', () => {
+    const hash = window.location.hash || '';
+    const match = hash.match(/room=([A-Za-z0-9]{5})/i);
+    if (!match && currentRoomCode) {
+      // User backed out of room using browser back button
+      leaveRoom();
+    }
+  });
+
+  // Handle bfcache (back-forward cache) to clear any cached display name input value
+  window.addEventListener('pageshow', () => {
+    const hash = window.location.hash || '';
+    const match = hash.match(/room=([A-Za-z0-9]{5})/i);
+    if (!match || !currentRoomCode) {
+      if (userNameInput) {
+        userNameInput.value = '';
+      }
+      localStorage.removeItem(USER_NAME_KEY);
+      localStorage.removeItem(ROOM_CODE_KEY);
+    }
+  });
 
   // Attempt auto-rejoin immediately upon connection or script execution
   if (socket.connected) {

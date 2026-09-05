@@ -211,7 +211,7 @@
               <span>Your Display Name</span>
             </label>
             <div class="input-glow-wrap">
-              <input type="text" id="user-name-input" placeholder="e.g. Alex" maxlength="25" autocomplete="off" autofocus>
+              <input type="text" id="user-name-input" placeholder="e.g. Alex" maxlength="25" autocomplete="off" value="" autofocus>
             </div>
           </div>
 
@@ -1070,16 +1070,20 @@
   <!-- Toast Notifications Container -->
   <div id="toast-container" class="toast-container"></div>
 
-  <!-- Instant flash prevention on page refresh -->
+  <!-- Instant flash prevention on page refresh for active room session -->
   <script>
     (function() {
       try {
         var h = window.location.hash || '';
         var m = h.match(/room=([A-Za-z0-9]{5})/i);
-        var r = (m && m[1]) || localStorage.getItem('traceable_room');
-        if (r && r.length === 5) {
+        var stored = localStorage.getItem('traceable_room');
+        if (stored && stored.length === 5 && m && m[1] && m[1].toUpperCase() === stored.toUpperCase()) {
           var overlay = document.getElementById('room-modal-overlay');
           if (overlay) overlay.classList.add('hidden');
+        } else {
+          var nameInput = document.getElementById('user-name-input');
+          if (nameInput) nameInput.value = '';
+          localStorage.removeItem('traceable_username');
         }
       } catch(e) {}
     })();
